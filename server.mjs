@@ -34,7 +34,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(
   cors({
-    origin: "https://app-frontend-7846-27xz37ihu-galpaz22s-projects.vercel.app", // Change this to your frontend URL
+    origin: "https://app-frontend-7846-djwrw43ul-galpaz22s-projects.vercel.app", // Change this to your frontend URL
     credentials: true,
   })
 );
@@ -50,7 +50,7 @@ app.use(cookieSession({
   secure: true, // Set to true if using HTTPS
   httpOnly: false,
   sameSite: "strict",
-  domain: "app-frontend-7846-27xz37ihu-galpaz22s-projects.vercel.app",
+  domain: "https://app-frontend-7846-djwrw43ul-galpaz22s-projects.vercel.app",
 }));
 
 const upload = multer({ dest: "uploads/" });
