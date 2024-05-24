@@ -7,7 +7,7 @@ import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
-import cookieSession from "cookie-session";
+import session from "express-session";
 import { MongoClient } from "mongodb";
 
 process.env.ANTHROPIC_API_KEY =
@@ -19,7 +19,7 @@ const client = new MongoClient(uri);
 
 const app = express();
 const port = 4000;
-const SECRET_KEY = "your_secret_key"; // Use a strong secret key and store it securely
+const SECRET_KEY = Math.random().toString(36).slice(2); // Use a strong secret key and store it securely
 
 client
   .connect()
@@ -42,16 +42,18 @@ app.use(
 
 
 // Replace express-session middleware with cookie-session
-app.use(cookieSession({
-  name: "session",
-  keys: [SECRET_KEY],
-  // Cookie Options
-  maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  secure: true, // Set to true if using HTTPS
-  httpOnly: false,
-  sameSite: "strict",
-  domain: "https://app-frontend-7846-djwrw43ul-galpaz22s-projects.vercel.app",
+app.use(session({
+  secret: SECRET_KEY,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    secure: true, // Set to true if using HTTPS
+    httpOnly: false,
+    sameSite: "strict",
+  },
 }));
+
 
 const upload = multer({ dest: "uploads/" });
 const sessionMemory = {};
