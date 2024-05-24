@@ -39,13 +39,17 @@ app.use(
   })
 );
 
-app.use(
-  cookieSession({
-    name: "session",
-    keys: [SECRET_KEY],
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  })
-);
+import cookieSession from "cookie-session";
+
+// Replace express-session middleware with cookie-session
+app.use(cookieSession({
+  name: "session",
+  keys: [SECRET_KEY],
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  secure: false, // Set to true if using HTTPS
+  httpOnly: true,
+}));
 
 const upload = multer({ dest: "uploads/" });
 const sessionMemory = {};
@@ -68,6 +72,7 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
 
+   
     req.session.userId = user._id; // Assuming you have a field named _id for user identification
     res.send({ message: "Logged in successfully", redirectTo: "/ask" });
   } catch (error) {
