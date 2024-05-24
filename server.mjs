@@ -19,7 +19,7 @@ const client = new MongoClient(uri);
 
 const app = express();
 const port = 4000;
-const SECRET_KEY = Math.random().toString(36).slice(2); // Use a strong secret key and store it securely
+const SECRET_KEY = "your_secret_key"; // Use a strong secret key and store it securely
 
 client
   .connect()
@@ -34,7 +34,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(
   cors({
-    origin: "https://app-frontend-7846-bn4p3dzkm-galpaz22s-projects.vercel.app", // Change this to your frontend URL
+    origin: "https://app-frontend-7846-27xz37ihu-galpaz22s-projects.vercel.app", // Change this to your frontend URL
     credentials: true,
   })
 );
