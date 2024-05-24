@@ -48,7 +48,7 @@ app.use(cookieSession({
   // Cookie Options
   maxAge: 24 * 60 * 60 * 1000, // 24 hours
   secure: true, // Set to true if using HTTPS
-  httpOnly: true,
+  httpOnly: false,
 }));
 
 const upload = multer({ dest: "uploads/" });
