@@ -34,7 +34,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(
   cors({
-    origin: "http://localhost:3000", // Change this to your frontend URL
+    origin: "https://ask-your-doc.vercel.app", // Change this to your frontend URL
     credentials: true,
   })
 );
