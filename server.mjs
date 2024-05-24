@@ -19,7 +19,7 @@ const client = new MongoClient(uri);
 
 const app = express();
 const port = 4000;
-const SECRET_KEY = "your_secret_key"; // Use a strong secret key and store it securely
+const SECRET_KEY = Math.random().toString(36).slice(2); // Use a strong secret key and store it securely
 
 client
   .connect()
@@ -80,6 +80,8 @@ app.post("/login", async (req, res) => {
     res.status(500).send("An error occurred while logging in.");
   }
 });
+
+ 
 
 app.get("/check-auth", (req, res) => {
   if (req.session.userId) {
