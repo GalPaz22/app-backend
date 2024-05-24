@@ -73,7 +73,7 @@ app.post("/login", async (req, res) => {
     if (!validPassword) return res.status(403).send("Invalid credentials");
 
    
-    req.session.userId = user._id; // Assuming you have a field named _id for user identification
+    req.session.userId = user // Assuming you have a field named _id for user identification
     res.send({ message: "Logged in successfully", redirectTo: "/ask" });
   } catch (error) {
     console.error("Error logging in:", error);
