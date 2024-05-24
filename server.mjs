@@ -49,6 +49,8 @@ app.use(cookieSession({
   maxAge: 24 * 60 * 60 * 1000, // 24 hours
   secure: true, // Set to true if using HTTPS
   httpOnly: false,
+  sameSite: "strict",
+  domain: "app-frontend-7846-27xz37ihu-galpaz22s-projects.vercel.app",
 }));
 
 const upload = multer({ dest: "uploads/" });
