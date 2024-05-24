@@ -7,7 +7,7 @@ import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
-import session from "express-session";
+import cookieSession from "cookie-session";
 import { MongoClient } from "mongodb";
 
 process.env.ANTHROPIC_API_KEY =
@@ -40,11 +40,10 @@ app.use(
 );
 
 app.use(
-  session({
-    secret: SECRET_KEY,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false }, // Set to true if using HTTPS
+  cookieSession({
+    name: "session",
+    keys: [SECRET_KEY],
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
   })
 );
 
