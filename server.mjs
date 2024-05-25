@@ -125,7 +125,7 @@ app.post('/generate-response', upload.single('file'), async (req, res) => {
     conversationHistory.push(`User: ${question}`);
     
     const inputText = `${pdfText}\n\n${conversationHistory.join("\n")}\nAssistant:`;
-    const ANTHROPIC_API_KEY = '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';
+    const ANTHROPIC_API_KEY = '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';
     
     const model = new ChatAnthropicMessages({
       apiKey: ANTHROPIC_API_KEY,
