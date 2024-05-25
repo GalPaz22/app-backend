@@ -43,15 +43,16 @@ app.use(
 
 // Replace express-session middleware with cookie-session
 app.use(session({
-  secret: SECRET_KEY,
+  secret: 'your_secret_key',
   resave: false,
   saveUninitialized: true,
+  store: new MongoStore({ url: mongoUri }),
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     secure: true, // Set to true if using HTTPS
-    httpOnly: false,
-    sameSite: "strict",
-  },
+    httpOnly: true,
+    sameSite: "lax",
+  }
 }));
 
 
