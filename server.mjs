@@ -1,17 +1,15 @@
 import express from "express";
 import session from "express-session";
-import connectMongo from "connect-mongo";
+import { MongoClient } from "mongodb";
 import cors from "cors";
 import bodyParser from "body-parser";
-import { MongoClient } from "mongodb";
 import multer from "multer";
 import fs from "fs";
 import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
-
-const MongoStore = connectMongo(session);
+import MongoStore from "connect-mongo"; // Correct import for latest version
 
 const app = express();
 const port = 4000;
@@ -37,7 +35,9 @@ app.use(session({
   secret: 'your_secret_key', // Replace with a strong secret key
   resave: false,
   saveUninitialized: true,
-  store: new MongoStore({ clientPromise: client.connect() }),
+  store: MongoStore.create({ // Correct instantiation
+    clientPromise: client.connect(),
+  }),
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     secure: true, // Set to true if using HTTPS
