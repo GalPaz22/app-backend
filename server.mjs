@@ -13,6 +13,8 @@ import MongoStore from 'connect-mongo';
 
 const app = express();
 const port = 4000;
+process.env.ANTHROPIC_API_KEY =
+  "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";
 
 const mongoUri = 'mongodb+srv://galpaz2210:jGqI4pEv3gZuJTCc@cluster0.qiplrsq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -125,10 +127,10 @@ app.post('/generate-response', upload.single('file'), async (req, res) => {
     conversationHistory.push(`User: ${question}`);
     
     const inputText = `${pdfText}\n\n${conversationHistory.join("\n")}\nAssistant:`;
-    const ANTHROPIC_API_KEY = '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';
+    
     
     const model = new ChatAnthropicMessages({
-      apiKey: ANTHROPIC_API_KEY,
+      apiKey: process.env.ANTHROPIC_API_KEY,
       model: 'claude-1.3',
     });
 
