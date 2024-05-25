@@ -13,7 +13,7 @@ import MongoStore from 'connect-mongo';
 
 const app = express();
 const port = 4000;
-ANTHROPIC_API_KEY = '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';
+const ANTHROPIC_API_KEY = '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';
 const mongoUri = 'mongodb+srv://galpaz2210:jGqI4pEv3gZuJTCc@cluster0.qiplrsq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
 
