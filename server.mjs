@@ -1,3 +1,4 @@
+require('dotenv').config();
 import express from 'express';
 import session from 'express-session';
 import bodyParser from 'body-parser';
@@ -13,8 +14,6 @@ import MongoStore from 'connect-mongo';
 
 const app = express();
 const port = 4000;
-process.env.ANTHROPIC_API_KEY =
-  "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";
 
 const mongoUri = 'mongodb+srv://galpaz2210:jGqI4pEv3gZuJTCc@cluster0.qiplrsq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
