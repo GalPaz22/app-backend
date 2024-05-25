@@ -14,7 +14,7 @@ import MongoStore from 'connect-mongo';
 const app = express();
 const port = 4000;
 process.env.ANTHROPIC_API_KEY =
-  "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";
+  "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";
 
 const mongoUri = 'mongodb+srv://galpaz2210:jGqI4pEv3gZuJTCc@cluster0.qiplrsq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -131,7 +131,7 @@ app.post('/generate-response', upload.single('file'), authenticate, async (req, 
     
     const model = new ChatAnthropicMessages({
       apiKey: process.env.ANTHROPIC_API_KEY,
-      model: 'claude-1.3',
+      model: 'claude-3-sonnet-20240229',
     });
 
    const response = await model.invoke(inputText);
