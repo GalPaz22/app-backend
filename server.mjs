@@ -14,7 +14,7 @@ import MongoStore from 'connect-mongo';
 const app = express();
 const port = 4000;
 
-const mongoUri = 'mongodb+srv://galpaz2210:jGqI4pEv3gZuJTCc@cluster0.qiplrsq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 client.connect().then(() => {
@@ -27,7 +27,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.use(cors({
-  origin: 'https://app-frontend-7846-cxpaagqxk-galpaz22s-projects.vercel.app/', // Your frontend URL
+  origin: 'https://app-frontend-7846-cxpaagqxk-galpaz22s-projects.vercel.app', // Your frontend URL
   credentials: true,
 }));
 
