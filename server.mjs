@@ -112,7 +112,7 @@ const authenticate = (req, res, next) => {
 };
 app.post('/generate-response', upload.single('file'), authenticate, async (req, res) => {
   const { question, sessionId } = req.body;
-  const { apiKey } = req.headers; // Extract API key from request headers
+  const { apiKey } = req.body.apiKey; // Extract API key from request headers
   const filePath = req.file.path;
 
   const currentSessionId = sessionId || uuidv4();
