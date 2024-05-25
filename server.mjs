@@ -132,9 +132,9 @@ app.post('/generate-response', upload.single('file'), async (req, res) => {
       model: 'claude-1.3',
     });
 
-    const response = await model.invoke(inputText);
+   const response = await model.invoke(inputText);
 
-    const content = response.text.trim();
+   const content = response.text.trim();
     conversationHistory.push(`Assistant: ${content}`);
     sessionMemory[currentSessionId] = conversationHistory;
 
