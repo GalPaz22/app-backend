@@ -28,12 +28,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.use(cors({
-  origin: 'https://app-frontend-7846-cxpaagqxk-galpaz22s-projects.vercel.app', // Your frontend URL
+  origin: 'https://app-frontend-7846-ow0c35cgy-galpaz22s-projects.vercel.app', // Your frontend URL
   credentials: true,
 }));
 
 app.use(session({
-  secret: 'your_secret_key',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
   store: MongoStore.create({
@@ -110,9 +110,9 @@ const authenticate = (req, res, next) => {
   req.userId = userId; // Attach userId to request object
   next();
 };
+
 app.post('/generate-response', upload.single('file'), authenticate, async (req, res) => {
-  const { question, sessionId } = req.body;
-  const { apiKey } = req.body.apiKey; // Extract API key from request headers
+  const { question, sessionId, apiKey } = req.body;
   const filePath = req.file.path;
 
   const currentSessionId = sessionId || uuidv4();
@@ -127,15 +127,14 @@ app.post('/generate-response', upload.single('file'), authenticate, async (req, 
     
     const inputText = `${pdfText}\n\n${conversationHistory.join("\n")}\nAssistant:`;
     
-    
     const model = new ChatAnthropicMessages({
-      apiKey: apiKey, // Use API key from request headers if available, otherwise fallback to environment variable
+      apiKey: apiKey, // Use API key from request body
       model: 'claude-3-sonnet-20240229',
     });
 
-   const response = await model.invoke(inputText);
+    const response = await model.invoke(inputText);
+    const content = response.text.trim();
 
-   const content = response.text.trim();
     conversationHistory.push(`Assistant: ${content}`);
     sessionMemory[currentSessionId] = conversationHistory;
 
