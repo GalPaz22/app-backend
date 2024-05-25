@@ -33,7 +33,7 @@ app.use(cors({
 }));
 
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: 'your_secret_key',
   resave: false,
   saveUninitialized: true,
   store: MongoStore.create({
