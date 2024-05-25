@@ -34,7 +34,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(
   cors({
-    origin: "https://app-frontend-7846-djwrw43ul-galpaz22s-projects.vercel.app", // Change this to your frontend URL
+    origin: "http://localhost:3000", // Change this to your frontend URL
     credentials: true,
   })
 );
