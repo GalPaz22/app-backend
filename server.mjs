@@ -27,7 +27,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.use(cors({
-  origin: "https://app-frontend-7846-djwrw43ul-galpaz22s-projects.vercel.app", // Your frontend URL
+  origin: "http://localhost:3000", // Your frontend URL
   credentials: true,
 }));
 
@@ -40,7 +40,7 @@ app.use(session({
   }),
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    secure: true, // Set to true if using HTTPS
+    secure: false, // Set to true if using HTTPS
     httpOnly: true,
     sameSite: "strict",
   }
