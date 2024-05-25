@@ -110,7 +110,7 @@ const authenticate = (req, res, next) => {
   next();
 };
 
-app.post('/generate-response', upload.single('file'), authenticate, async (req, res) => {
+app.post('/generate-response', upload.single('file'), async (req, res) => {
   const { question, sessionId } = req.body;
   const filePath = req.file.path;
 
