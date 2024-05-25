@@ -1,4 +1,3 @@
-require('dotenv').config();
 import express from 'express';
 import session from 'express-session';
 import bodyParser from 'body-parser';
@@ -14,6 +13,8 @@ import MongoStore from 'connect-mongo';
 
 const app = express();
 const port = 4000;
+process.env.ANTHROPIC_API_KEY =
+  "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";
 
 const mongoUri = 'mongodb+srv://galpaz2210:jGqI4pEv3gZuJTCc@cluster0.qiplrsq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const client = new MongoClient(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -28,7 +29,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.use(cors({
-  origin: 'https://app-frontend-7846-cflc3z6hy-galpaz22s-projects.vercel.app', // Your frontend URL
+  origin: 'https://app-frontend-7846-cxpaagqxk-galpaz22s-projects.vercel.app/', // Your frontend URL
   credentials: true,
 }));
 
@@ -110,9 +111,9 @@ const authenticate = (req, res, next) => {
   req.userId = userId; // Attach userId to request object
   next();
 };
-
 app.post('/generate-response', upload.single('file'), authenticate, async (req, res) => {
   const { question, sessionId } = req.body;
+  const { apiKey } = req.headers; // Extract API key from request headers
   const filePath = req.file.path;
 
   const currentSessionId = sessionId || uuidv4();
@@ -129,7 +130,7 @@ app.post('/generate-response', upload.single('file'), authenticate, async (req, 
     
     
     const model = new ChatAnthropicMessages({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+      apiKey: apiKey, // Use API key from request headers if available, otherwise fallback to environment variable
       model: 'claude-3-sonnet-20240229',
     });
 
