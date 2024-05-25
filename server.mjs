@@ -125,7 +125,7 @@ app.post('/generate-response', upload.single('file'), authenticate, async (req, 
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
     
-    const inputText = `${pdfText}\n\n${conversationHistory.join("\n")}\nAssistant:`;
+    const inputText = `You are an academy student assistant. You will get context from PDF documents of academic material and questions about it. Answer in Hebrew, in detail, and in an academic manner.\n\n${pdfText}\n\n${conversationHistory.join("\n")}\nAssistant:`;
     
     const model = new ChatAnthropicMessages({
       apiKey: apiKey, // Use API key from request body
