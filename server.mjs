@@ -146,7 +146,7 @@ app.post(
 
       const model = new ChatAnthropicMessages({
         apiKey: apiKey, // Use API key from request body
-        model: "claude-3-sonnet-20240229",
+        model: "claude-3-opus-20240229",
       });
 
       const response = await model.invoke(inputText);
