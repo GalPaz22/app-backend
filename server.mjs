@@ -33,7 +33,7 @@ app.use(cors({
 }));
 
 app.use(session({
-  secret: 'your_secret_key',
+  secret: Math.random().toString(36).substring(2),
   resave: false,
   saveUninitialized: true,
   store: MongoStore.create({
@@ -129,7 +129,7 @@ app.post('/generate-response', upload.single('file'), authenticate, async (req, 
     
     const model = new ChatAnthropicMessages({
       apiKey: apiKey, // Use API key from request body
-      model: 'claude-3-sonnet-20240229',
+      model: 'claude-3-sonnet-20240229' ,
     });
 
     const response = await model.invoke(inputText);
