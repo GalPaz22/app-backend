@@ -28,7 +28,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 app.use(cors({
-  origin: 'https://app-frontend-7846-ow0c35cgy-galpaz22s-projects.vercel.app', // Your frontend URL
+  origin: 'https://ask-your-doc.vercel.app', // Your frontend URL
   credentials: true,
 }));
 
