@@ -74,7 +74,7 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
 
-    req.session.userId = user._id; // Set the userId in the session
+    req.session.userId = Math.random().toString(36).substring(2); // Set the userId in the session
 
     res.send({ message: "Logged in successfully", userId: user._id });
   } catch (error) {
