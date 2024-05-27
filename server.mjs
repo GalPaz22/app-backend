@@ -120,7 +120,7 @@ const authenticate = (req, res, next) => {
     return res.status(401).send("Not authenticated");
   }
   const sessionId = req.sessionID;
-  const isUnique = sessionMemory[sessionId] === userId;
+  const isUnique = sessionId == userId;
   if (!isUnique) {
     return res.status(403).send("User ID is not unique to the session");
   }
