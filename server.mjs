@@ -115,10 +115,11 @@ app.post("/logout", (req, res) => {
 });
 
 const authenticate = (req, res, next) => {
-  if (!req.session.userId) {
+  if (req.session.userId !== req.body.userId) {
     return res.status(401).send("Not authenticated");
   }
-  next(); // Proceed to the next middleware
+  next();
+
 };
 
 app.post(
