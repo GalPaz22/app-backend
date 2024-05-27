@@ -76,6 +76,10 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
 
+    if (req.session.userId) {
+      return res.status(400).send("User is already logged in");
+    }
+
     res.send({ message: "Logged in successfully", userId: user._id });
   } catch (error) {
     console.error("Error logging in:", error);
@@ -84,13 +88,7 @@ app.post("/login", async (req, res) => {
 });
 
 app.get("/check-auth", (req, res) => {
-  const authHeader = req.headers["authorization"];
-  if (!authHeader) {
-    return res.status(401).json({ authenticated: false });
-  }
-
-  const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
-  if (userId) {
+  if (req.session.userId) {
     return res.json({ authenticated: true });
   } else {
     return res.status(401).json({ authenticated: false });
@@ -108,17 +106,11 @@ app.post("/logout", (req, res) => {
 });
 
 const authenticate = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  if (!authHeader) {
+  if (!req.session.userId) {
     return res.status(401).send("Not authenticated");
   }
 
-  const userId = authHeader.split(" ")[1];
-  if (!userId) {
-    return res.status(401).send("Not authenticated");
-  }
-
-  req.userId = userId; // Attach userId to request object
+  req.userId = req.session.userId; // Attach userId to request object
   next();
 };
 
