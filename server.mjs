@@ -48,12 +48,14 @@ app.use(
     saveUninitialized: true,
     store: MongoStore.create({
       clientPromise: client.connect(),
+    
     }),
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       secure: true, // Set to true if using HTTPS
       httpOnly: false,
       sameSite: "strict",
+      
     },
   })
 );
@@ -115,19 +117,26 @@ app.post("/logout", (req, res) => {
   });
 });
 
-const authenticate = (req, res, next) => {
-  if (!req.session.userId)  {
+const authenticate = async (req, res, next) => {
+  const { sessionId, userId } = req.session;
+
+  if (!sessionId || !userId) {
     return res.status(401).send("Not authenticated");
   }
-  const sessionId = req.sessionID;
-  const isUnique = sessionId == userId;
-  if (!isUnique) {
-    return res.status(403).send("User ID is not unique to the session");
+
+  try {
+    // Find the session in the database
+    const session = await Session.findOne({ sessionId, userId });
+
+    if (!session) {
+      return res.status(401).send("Invalid session");
+    }
+
+    next();
+  } catch (error) {
+    console.error('Database error:', error);
+    res.status(500).send("Internal server error");
   }
-  
- 
-  next();
-  
 };
 
 app.post(
