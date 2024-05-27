@@ -66,8 +66,8 @@ app.post("/login", async (req, res) => {
     return res.status(400).send("Email and password are required");
 
   try {
+    const db = client.db("Cluster0"); // Update with your database name
     const usersCollection = db.collection("users");
-    const sessionsCollection = db.collection("sessions");
 
     const user = await usersCollection.findOne({ email });
 
@@ -76,17 +76,7 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
 
-    // Invalidate any existing session for the user
-    await sessionsCollection.deleteMany({ "session.userId": user._id });
-
-    // Create new session
-    req.session.userId = user._id;
-    req.session.save((err) => {
-      if (err) {
-        return res.status(500).send("Could not create session");
-      }
-      res.send({ message: "Logged in successfully", userId: user._id });
-    });
+    res.send({ message: "Logged in successfully", userId: user._id });
   } catch (error) {
     console.error("Error logging in:", error);
     res.status(500).send("An error occurred while logging in.");
