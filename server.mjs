@@ -44,7 +44,7 @@ app.use(
   session({
     secret: Math.random().toString(36).substring(2),
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     store: MongoStore.create({
       clientPromise: client.connect(),
     }),
@@ -68,6 +68,7 @@ app.post("/login", async (req, res) => {
   try {
     const db = client.db("Cluster0"); // Update with your database name
     const usersCollection = db.collection("users");
+    const sessionsCollection = db.collection("sessions");
 
     const user = await usersCollection.findOne({ email });
 
@@ -76,50 +77,97 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
 
-    res.send({ message: "Logged in successfully", userId: user._id });
+    // Invalidate any existing session for the user
+    await sessionsCollection.deleteMany({ userId: user._id });
+
+    // Create new session
+    const sessionId = uuidv4();
+    await sessionsCollection.insertOne({ userId: user._id, sessionId });
+
+    res.send({ message: "Logged in successfully", sessionId, userId: user._id });
   } catch (error) {
     console.error("Error logging in:", error);
     res.status(500).send("An error occurred while logging in.");
   }
 });
 
-app.get("/check-auth", (req, res) => {
+app.get("/check-auth", async (req, res) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader) {
     return res.status(401).json({ authenticated: false });
   }
 
-  const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
-  if (userId) {
-    return res.json({ authenticated: true });
-  } else {
+  const sessionId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer sessionId'
+  if (!sessionId) {
     return res.status(401).json({ authenticated: false });
   }
-});
 
-app.post("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).send("Could not log out");
+  try {
+    const db = client.db("Cluster0"); // Update with your database name
+    const sessionsCollection = db.collection("sessions");
+
+    const session = await sessionsCollection.findOne({ sessionId });
+    if (session) {
+      return res.json({ authenticated: true });
     } else {
-      res.send("Logged out successfully");
+      return res.status(401).json({ authenticated: false });
     }
-  });
+  } catch (error) {
+    console.error("Error checking auth:", error);
+    res.status(500).send("An error occurred while checking authentication.");
+  }
 });
 
-const authenticate = (req, res, next) => {
+app.post("/logout", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) {
+    return res.status(400).send("Not authenticated");
+  }
+
+  const sessionId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer sessionId'
+  if (!sessionId) {
+    return res.status(400).send("Not authenticated");
+  }
+
+  try {
+    const db = client.db("Cluster0"); // Update with your database name
+    const sessionsCollection = db.collection("sessions");
+
+    await sessionsCollection.deleteOne({ sessionId });
+
+    res.send("Logged out successfully");
+  } catch (error) {
+    console.error("Error logging out:", error);
+    res.status(500).send("An error occurred while logging out.");
+  }
+});
+
+const authenticate = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader) {
     return res.status(401).send("Not authenticated");
   }
 
-  const userId = authHeader.split(" ")[1];
-  if (!userId) {
+  const sessionId = authHeader.split(" ")[1];
+  if (!sessionId) {
     return res.status(401).send("Not authenticated");
   }
 
-  req.userId = userId; // Attach userId to request object
-  next();
+  try {
+    const db = client.db("Cluster0"); // Update with your database name
+    const sessionsCollection = db.collection("sessions");
+
+    const session = await sessionsCollection.findOne({ sessionId });
+    if (!session) {
+      return res.status(401).send("Not authenticated");
+    }
+
+    req.userId = session.userId; // Attach userId to request object
+    next();
+  } catch (error) {
+    console.error("Error during authentication:", error);
+    res.status(500).send("An error occurred while authenticating.");
+  }
 };
 
 app.post(
