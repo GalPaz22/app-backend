@@ -93,7 +93,7 @@ app.get("/check-auth", (req, res) => {
   if (!authHeader) {
     return res.status(401).json({ authenticated: false });
   }
-  const session = req.headers.sessionId;
+  const session = req.headers["sessionId"];
   if (!session) {
     return res.status(401).json({ authenticated: false });
   }
