@@ -116,9 +116,16 @@ app.post("/logout", (req, res) => {
 });
 
 const authenticate = (req, res, next) => {
-  if (!req.session.userID !== userId) {
+  if (!req.session.userId)  {
     return res.status(401).send("Not authenticated");
   }
+  const sessionId = req.sessionID;
+  const isUnique = sessionMemory[sessionId] === userId;
+  if (!isUnique) {
+    return res.status(403).send("User ID is not unique to the session");
+  }
+  
+ 
   next();
   
 };
