@@ -88,13 +88,25 @@ app.post("/login", async (req, res) => {
   }
 });
 
-  app.get("/check-auth", (req, res) => {
-    if (req.session.userId) {
-      return res.json({ authenticated: true });
-    } else {
-      return res.status(401).json({ authenticated: false });
-    }
-  });
+app.get("/check-auth", (req, res) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) {
+    return res.status(401).json({ authenticated: false });
+  }
+
+  if (!req.session.userId) {
+    return res.status(401).json({ authenticated: false });
+  }
+
+  const userId = authHeader.split(" ")[1] ; // Assuming the format is 'Bearer userId'
+  if (userId) {
+    return res.json({ authenticated: true });
+  } else {
+    return res.status(401).json({ authenticated: false });
+  }
+
+
+});
 
 app.post("/logout", (req, res) => {
   req.session.destroy((err) => {
@@ -107,11 +119,17 @@ app.post("/logout", (req, res) => {
 });
 
 const authenticate = (req, res, next) => {
-  if (!req.session.userId) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) {
     return res.status(401).send("Not authenticated");
   }
 
-  req.userId = req.session.userId; // Attach userId to request object
+  const userId = authHeader.split(" ")[1];
+  if (!userId) {
+    return res.status(401).send("Not authenticated");
+  }
+
+  req.userId = userId; // Attach userId to request object
   next();
 };
 
