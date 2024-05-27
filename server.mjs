@@ -76,9 +76,9 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
 
- 
 
 
+    res.send({ message: "Logged in successfully", userId: user._id });
   } catch (error) {
     console.error("Error logging in:", error);
     res.status(500).send("An error occurred while logging in.");
@@ -104,11 +104,17 @@ app.post("/logout", (req, res) => {
 });
 
 const authenticate = (req, res, next) => {
-  if (!req.session.userId) {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) {
     return res.status(401).send("Not authenticated");
   }
 
-  req.userId = req.session.userId; // Attach userId to request object
+  const userId = authHeader.split(" ")[1];
+  if (!userId) {
+    return res.status(401).send("Not authenticated");
+  }
+
+  req.userId = userId; // Attach userId to request object
   next();
 };
 
