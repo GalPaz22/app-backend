@@ -124,6 +124,9 @@ const authenticate = (req, res, next) => {
   if (!userId) {
     return res.status(401).send("Not authenticated");
   }
+  if (req.session.userId !== userId) {
+    return res.status(401).send("Not authenticated");
+  }
 
   req.userId = userId; // Attach userId to request object
   next();
