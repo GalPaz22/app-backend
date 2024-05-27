@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
+import { Session } from "express-session";
 
 const app = express();
 const port = 4000;
@@ -115,7 +116,7 @@ app.post("/logout", (req, res) => {
 });
 
 const authenticate = (req, res, next) => {
-  if (req.session.userId !== req.body.userId) {
+  if (currentSessionId !== req.session.userId) {
     return res.status(401).send("Not authenticated");
   }
   next();
