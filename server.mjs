@@ -79,7 +79,7 @@ app.post("/login", async (req, res) => {
       return res.status(400).send("User is already logged in");
     }
 
-    req.session.userId = user._id;  
+    req.session.userId = user._id; // Assuming you have a field named _id for user identification  
 
     res.send({ message: "Logged in successfully", userId: user._id });
   } catch (error) {
@@ -93,8 +93,8 @@ app.get("/check-auth", (req, res) => {
   if (!authHeader) {
     return res.status(401).json({ authenticated: false });
   }
-
-  if (!req.session.userId) {
+  const session = req.headers.sessionId;
+  if (!session) {
     return res.status(401).json({ authenticated: false });
   }
 
