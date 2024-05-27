@@ -115,19 +115,10 @@ app.post("/logout", (req, res) => {
 });
 
 const authenticate = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  if (!authHeader) {
+  if (!req.session.userId) {
     return res.status(401).send("Not authenticated");
   }
-
-  const userId = authHeader.split(" ")[1];
-  if (!userId) {
-    return res.status(401).send("Not authenticated");
-  }
- 
-
-  req.userId = userId; // Attach userId to request object
-  next();
+  next(); // Proceed to the next middleware
 };
 
 app.post(
