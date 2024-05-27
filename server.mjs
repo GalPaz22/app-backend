@@ -118,7 +118,7 @@ app.post("/logout", (req, res) => {
 });
 
 const authenticate = async (req, res, next) => {
-  const { sessionId, userId } = req.body;
+  const { sessionId, userId } = req.body.sessionId;
 
   if (!sessionId || !userId) {
     return res.status(401).send("Not authenticated");
