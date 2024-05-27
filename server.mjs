@@ -50,8 +50,8 @@ app.use(
     }),
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      secure: process.env.NODE_ENV === 'production', // Set to true only in production
-      httpOnly: true, // Keep httpOnly as true for security
+      secure: true, // Set to true if using HTTPS
+      httpOnly: false,
       sameSite: "strict",
     },
   })
@@ -62,11 +62,13 @@ const sessionMemory = {};
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).send("Email and password are required");
+  if (!email || !password)
+    return res.status(400).send("Email and password are required");
 
   try {
     const db = client.db("Cluster0"); // Update with your database name
     const usersCollection = db.collection("users");
+
     const user = await usersCollection.findOne({ email });
 
     if (!user) return res.status(404).send("User not found");
@@ -74,9 +76,9 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
 
-    req.session.userId = Math.random().toString(36).substring(2); // Set the userId in the session
+ 
 
-    res.send({ message: "Logged in successfully", userId: user._id });
+
   } catch (error) {
     console.error("Error logging in:", error);
     res.status(500).send("An error occurred while logging in.");
