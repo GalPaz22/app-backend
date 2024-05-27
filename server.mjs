@@ -75,11 +75,6 @@ app.post("/login", async (req, res) => {
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
-    if (req.session.userId) {
-      return res.status(400).send("User is already logged in");
-    }
-
-    req.session.userId = user._id; // Assuming you have a field named _id for user identification  
 
     res.send({ message: "Logged in successfully", userId: user._id });
   } catch (error) {
@@ -93,19 +88,13 @@ app.get("/check-auth", (req, res) => {
   if (!authHeader) {
     return res.status(401).json({ authenticated: false });
   }
-  const session = req.headers["sessionId"];
-  if (!session) {
-    return res.status(401).json({ authenticated: false });
-  }
 
-  const userId = authHeader.split(" ")[1] ; // Assuming the format is 'Bearer userId'
+  const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
   if (userId) {
     return res.json({ authenticated: true });
   } else {
     return res.status(401).json({ authenticated: false });
   }
-
-
 });
 
 app.post("/logout", (req, res) => {
