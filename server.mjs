@@ -133,8 +133,8 @@ const authenticate = async (req, res, next) => {
 
   try {
     // Find the session in the database using userId
-    const sessionCollection = client.db("Cluster0").collection("sessions");
-    const session = await sessionCollection.client.findOne({ userId });
+    const sessionCollection = client.db.collection("sessions");
+    const session = await sessionCollection.findOne({ userId });
 
     if (!session) {
       return res.status(401).send("Invalid session");
