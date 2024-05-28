@@ -74,7 +74,7 @@ const sessionMemory = {};
 
 
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, sessionID } = req.body;
   if (!email || !password)
     return res.status(400).send("Email and password are required");
   
@@ -108,7 +108,7 @@ app.post("/login", async (req, res) => {
     }
     
     // Generate a new session ID
-    const sessionID = uuidv4(); // Use a UUID library to generate a unique session ID
+  ; // Use a UUID library to generate a unique session ID
     const expiresAt = new Date(Date.now() +  60 * 1000); // 24 hours
     
     // Update user's active session
@@ -208,7 +208,7 @@ app.post(
       
       const response = await model.invoke(inputText);
       const content = response.text.trim();
-      const currentSessionId = uuidv4();
+      const currentSessionId = sessionId;
       
       conversationHistory.push(`Assistant: ${content}`);
       sessionMemory[currentSessionId] = conversationHistory;
