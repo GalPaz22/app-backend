@@ -84,7 +84,7 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
     
-    if ( sessionID !== user._id) {
+    if ( sessionID !== user.sessionID) {
       return res.status(400).send("User is already logged in");
     }
     
