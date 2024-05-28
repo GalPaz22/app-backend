@@ -208,7 +208,7 @@ app.post(
       
       const response = await model.invoke(inputText);
       const content = response.text.trim();
-      const currentSessionId = req.user.activeSession;
+      const currentSessionId = uuidv4();
       
       conversationHistory.push(`Assistant: ${content}`);
       sessionMemory[currentSessionId] = conversationHistory;
