@@ -150,27 +150,7 @@ app.get("/check-auth", checkSession, (req, res) => {
   res.json({ authenticated: true });
 });
 
-app.post("/logout", checkSession, async (req, res) => {
-  const sessionID = req.headers["sessionid"];
-  try {
-    const db = client.db("Cluster0");
-    await db.collection("users").updateOne(
-      { activeSession: sessionID },
-      { $unset: { activeSession: "" } }
-    );
-    await db.collection("sessions").deleteOne({ sessionID });
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).send("Could not log out");
-      } else {
-        res.send("Logged out successfully");
-      }
-    });
-  } catch (error) {
-    console.error("Error during logout:", error);
-    res.status(500).send("Internal Server Error");
-  }
-});
+
 
 app.post(
   "/generate-response",
