@@ -193,6 +193,8 @@ app.post(
       const loader = new PDFLoader(filePath);
       const docs = await loader.load();
       const pdfText = docs[0].pageContent;
+      const currentSessionId = sessionId || uuidv4();
+      
       
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
@@ -208,8 +210,6 @@ app.post(
       
       const response = await model.invoke(inputText);
       const content = response.text.trim();
-      const currentSessionId = sessionId;
-      
       conversationHistory.push(`Assistant: ${content}`);
       sessionMemory[currentSessionId] = conversationHistory;
 
