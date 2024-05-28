@@ -122,41 +122,9 @@ app.post("/login", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-const checkSession = async (req, res, next) => {
- 
-
-  try {
-    const db = client.db("Cluster0");
-    const sessionsCollection = db.collection("sessions");
-    const session = await sessionsCollection.findOne({ sessionID });
-
-    if (!session) {
-      return res.status(401).send("Session not found");
-    }
-
-    if (session.expiresAt < new Date()) {
-      // Session expired, clean up
-      await sessionsCollection.deleteOne({ sessionID });
-      await db.collection("users").updateOne(
-        { activeSession: sessionID },
-        { $unset: { activeSession: "" } }
-      );
-      return res.status(401).send("Session expired. Please log in again.");
-    }
-
-    // Session is valid, attach user ID to request object
-    req.userId = session.userID;
-    next();
-  } catch (error) {
-    console.error("Error checking session:", error);
-    res.status(500).send("Internal server error");
-  }
-};
-
-// Example usage of checkSession middleware in a protected route
 
 
-app.get("/check-auth", checkSession, (req, res) => {
+app.get("/check-auth", (req, res) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader) {
     return res.status(401).json({ authenticated: false });
