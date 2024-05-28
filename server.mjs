@@ -70,8 +70,8 @@ app.use(
 const upload = multer({ dest: "uploads/" });
 const sessionMemory = {};
 
-const { v4: uuidv4 } = require('uuid'); // Import UUID library
-const bcrypt = require('bcrypt');
+
+
 
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
