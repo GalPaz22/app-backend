@@ -53,7 +53,7 @@ app.use(
       clientPromise: client.connect(),
     }),
     cookie: {
-      maxAge: 1 * 30 * 60 * 1000, // 24 hours
+      maxAge: 1 *60, // 24 hours
       secure: true, // Set to true if using HTTPS
       httpOnly: false,
       sameSite: "strict",
@@ -148,33 +148,8 @@ app.post("/logout", (req, res) => {
   });
 });
 
-const authenticate = async (req, res, next) => {
-  const authHeader = req.headers["authorization"];
 
-  if (!authHeader) {
-    return res.status(401).send("Unauthorized");
-  }
 
-  const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
-
-  try {
-    // Find the session in the database using userId
-    const db = client.db("Cluster0");
-    const sessionCollection = db.collection("test_sessions");
-    const session = await sessionCollection.findOne({
-      userId: ObjectId(userId),
-    });
-
-    if (!session) {
-      return res.status(401).send("Invalid session");
-    }
-
-    next();
-  } catch (error) {
-    console.error("Database error:", error);
-    res.status(500).send("Internal server error");
-  }
-};
 app.post(
   "/generate-response",
   upload.single("file"),
