@@ -4,7 +4,7 @@ import session from "express-session";
 import bodyParser from "body-parser";
 import cors from "cors";
 import bcrypt from "bcrypt";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import multer from "multer";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
@@ -148,7 +148,7 @@ app.post("/logout", async (req, res) => {
 
     // Update user's active session to an empty string
     await usersCollection.updateOne(
-      { _id: new MongoClient.ObjectId(userId) },
+      { _id: new MongoClient(userId) },
       { $set: { activeSession: "" } }
     );
 
