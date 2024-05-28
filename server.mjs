@@ -69,7 +69,7 @@ const upload = multer({ dest: "uploads/" });
 const sessionMemory = {};
 
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, sessionID } = req.body;
   if (!email || !password)
     return res.status(400).send("Email and password are required");
   
@@ -84,7 +84,7 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
     
-    if (req.session.userId===user._id) {
+    if ( sessionID !== user._id) {
       return res.status(400).send("User is already logged in");
     }
     
