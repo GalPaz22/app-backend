@@ -38,6 +38,10 @@ app.use(
   cors({
     origin: "https://ask-your-doc.vercel.app", // Your frontend URL
     credentials: true,
+    optionsSuccessStatus: 200,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization", "sessionID"],
+
   })
 );
 
