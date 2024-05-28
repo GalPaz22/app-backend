@@ -53,7 +53,7 @@ app.use(
       clientPromise: client.connect(),
     }),
     cookie: {
-      maxAge: 1 *60, // 24 hours
+      maxAge: 60 * 1000, // 1 minute
       secure: true, // Set to true if using HTTPS
       httpOnly: false,
       sameSite: "strict",
@@ -101,7 +101,7 @@ app.post("/login", async (req, res) => {
     } // Use a UUID library to generate a unique session ID
 
     // Generate a new session ID
-    const expiresAt = new Date(Date.now() + 60* 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 24 hours
 
     // Update user's active session
     await usersCollection.updateOne(
@@ -123,7 +123,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
 app.get("/check-auth", (req, res) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader) {
@@ -138,22 +137,40 @@ app.get("/check-auth", (req, res) => {
   }
 });
 
-app.post("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).send("Could not log out");
-    } else {
-      res.send("Logged out successfully");
-    }
-  });
+app.post("/logout", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
+
+  try {
+    const db = client.db("Cluster0");
+    const usersCollection = db.collection("users");
+
+    // Update user's active session to an empty string
+    await usersCollection.updateOne(
+      { _id: new MongoClient.ObjectID(userId) },
+      { $set: { activeSession: "" } }
+    );
+
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).send("Could not log out");
+      } else {
+        res.send("Logged out successfully");
+      }
+    });
+  } catch (error) {
+    console.error("Error during logout:", error);
+    res.status(500).send("Internal Server Error");
+  }
 });
-
-
 
 app.post(
   "/generate-response",
   upload.single("file"),
-
   async (req, res) => {
     const { question, sessionId, apiKey } = req.body;
     const filePath = req.file.path;
