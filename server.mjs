@@ -123,12 +123,17 @@ app.post("/logout", (req, res) => {
 });
 
 const authenticate = async (req, res, next) => {
-  const { sessionId, userId } = req.headers.sessionID;
+  const authHeader = req.headers["authorization"];
 
+  if (!authHeader) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
 
   try {
-    // Find the session in the database
-    const session = await client.findOne({ sessionId, userId });
+    // Find the session in the database using userId
+    const session = await client.findOne({ userId });
 
     if (!session) {
       return res.status(401).send("Invalid session");
@@ -140,7 +145,6 @@ const authenticate = async (req, res, next) => {
     res.status(500).send("Internal server error");
   }
 };
-
 app.post(
   "/generate-response",
   upload.single("file"),
