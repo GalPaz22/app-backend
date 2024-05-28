@@ -78,7 +78,7 @@ app.post("/login", async (req, res) => {
   try {
     const db = client.db("Cluster0"); // Update with your main database name
     const usersCollection = db.collection("users");
-    const sessionsCollection = client.db("test").collection("sessions"); // New line
+    const sessionsCollection = db.collection("sessions"); // Update with your sessions collection name
     
     const user = await usersCollection.findOne({ email });
     
@@ -95,8 +95,11 @@ app.post("/login", async (req, res) => {
     // Check if the session exists in the sessions collection
     const activeSession = await sessionsCollection.findOne({ sessionID });
     if (activeSession) {
-      return res.status(400).send("User is already logged in");
+      return res.status(400).send("Session already exists");
     }
+    
+    // Create a new session document
+    await sessionsCollection.insertOne({ sessionID, userID: user._id });
     
     // Update user's active session
     await usersCollection.updateOne(
