@@ -71,14 +71,14 @@ const upload = multer({ dest: "uploads/" });
 const sessionMemory = {};
 
 app.post("/login", async (req, res) => {
-  const { email, password, sessionID } = req.body;
+  const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).send("Email and password are required");
   
   try {
     const db = client.db("Cluster0"); // Update with your main database name
     const usersCollection = db.collection("users");
-    const sessionsCollection = db.collection("sessions"); // Update with your sessions collection name
+    const sessionsCollection = client.db("test").collection("sessions");
     
     const user = await usersCollection.findOne({ email });
     
@@ -88,24 +88,25 @@ app.post("/login", async (req, res) => {
     if (!validPassword) return res.status(403).send("Invalid credentials");
     
     // Check if the user has an active session
-    if (user.activeSession && user.activeSession !== sessionID) {
-      return res.status(400).send("User is already logged in");
+    if (user.activeSession) {
+      // Check if the session exists in the sessions collection
+      const activeSession = await sessionsCollection.findOne({ sessionID: user.activeSession });
+      if (activeSession) {
+        return res.status(400).send("User is already logged in");
+      }
     }
     
-    // Check if the session exists in the sessions collection
-    const activeSession = await sessionsCollection.findOne({ sessionID });
-    if (activeSession) {
-      return res.status(400).send("Session already exists");
-    }
-    
-    // Create a new session document
-    await sessionsCollection.insertOne({ sessionID, userID: user._id });
+    // Generate a new session ID
+    const sessionID = uuidv4(); // Use a UUID library to generate a unique session ID
     
     // Update user's active session
     await usersCollection.updateOne(
       { _id: user._id },
       { $set: { activeSession: sessionID } }
     );
+    
+    // Create a new session document in the sessions collection
+    await sessionsCollection.insertOne({ sessionID, userID: user._id });
     
     res.send("Login successful");
     
@@ -114,7 +115,6 @@ app.post("/login", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
 
 app.get("/check-auth", (req, res) => {
   const authHeader = req.headers["authorization"];
