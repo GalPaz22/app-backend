@@ -138,10 +138,8 @@ app.get("/check-auth", (req, res) => {
 });
 
 app.post("/logout", async (req, res) => {
-  const authHeader = req.headers["authorization"];
-  if (!authHeader) {
-    return res.status(401).send("Unauthorized");
-  }
+
+
 
   const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
 
