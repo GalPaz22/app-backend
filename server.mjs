@@ -74,7 +74,7 @@ const sessionMemory = {};
 
 
 app.post("/login", async (req, res) => {
-  const { email, password, sessionID } = req.body;
+  const { email, password, } = req.body;
   if (!email || !password)
     return res.status(400).send("Email and password are required");
   
@@ -89,7 +89,7 @@ app.post("/login", async (req, res) => {
     
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
-    
+    const sessionID = uuidv4();
     // Check if the user has an active session
     if (user.activeSession) {
       // Check if the session exists in the sessions collection and if it's expired
