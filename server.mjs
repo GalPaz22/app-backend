@@ -118,15 +118,12 @@ app.post("/logout", (req, res) => {
 });
 
 const authenticate = async (req, res, next) => {
-  const { sessionId, userId } = req.body.sessionId;
+  const { sessionId, userId } = req.headers.sessionID;
 
-  if (!sessionId || !userId) {
-    return res.status(401).send("Not authenticated");
-  }
 
   try {
     // Find the session in the database
-    const session = await Session.findOne({ sessionId, userId });
+    const session = await client.findOne({ sessionId, userId });
 
     if (!session) {
       return res.status(401).send("Invalid session");
