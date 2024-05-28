@@ -84,7 +84,7 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
     
-    if (req.session.userId) {
+    if (req.session.userId===user._id) {
       return res.status(400).send("User is already logged in");
     }
     
@@ -134,7 +134,7 @@ const authenticate = async (req, res, next) => {
   try {
     // Find the session in the database using userId
     const db = client.db("Cluster0");
-    const sessionCollection = db.collection("sessions");
+    const sessionCollection = db.collection("test_sessions");
     const session = await sessionCollection.findOne({  userId: ObjectId(userId) });
 
     if (!session) {
@@ -150,7 +150,7 @@ const authenticate = async (req, res, next) => {
 app.post(
   "/generate-response",
   upload.single("file"),
-  authenticate,
+  
   async (req, res) => {
     const { question, sessionId, apiKey } = req.body;
     const filePath = req.file.path;
