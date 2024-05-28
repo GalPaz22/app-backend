@@ -133,7 +133,8 @@ const authenticate = async (req, res, next) => {
 
   try {
     // Find the session in the database using userId
-    const sessionCollection = client.db.collection("sessions");
+    const db = client.db("Cluster0");
+    const sessionCollection = db.collection("sessions");
     const session = await sessionCollection.findOne({ userId });
 
     if (!session) {
