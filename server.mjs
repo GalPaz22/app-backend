@@ -95,7 +95,7 @@ const checkSession = async (req, res, next) => {
 };
 
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, sessionID } = req.body;
   if (!email || !password) return res.status(400).send("Email and password are required");
 
   try {
@@ -110,7 +110,7 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
 
-    let sessionID = user.activeSession;
+    
     let expiresAt;
 
     if (sessionID) {
