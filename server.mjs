@@ -101,7 +101,7 @@ app.post("/login", async (req, res) => {
     } // Use a UUID library to generate a unique session ID
 
     // Generate a new session ID
-    const expiresAt = new Date(Date.now() + 60 * 1000); // 24 hours
+    const expiresAt = new Date(Date.now() + 60* 60 * 1000); // 24 hours
 
     // Update user's active session
     await usersCollection.updateOne(
