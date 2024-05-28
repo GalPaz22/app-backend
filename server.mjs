@@ -54,12 +54,14 @@ app.use(
     store: MongoStore.create({
       clientPromise: client.connect(),
     
+    
     }),
     cookie: {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       secure: true, // Set to true if using HTTPS
       httpOnly: false,
       sameSite: "strict",
+      
       
     },
   })
@@ -84,9 +86,16 @@ app.post("/login", async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
     
-    if ( sessionID !== user.sessionID) {
+    // Check if the user has an active session
+    if (user.activeSession && user.activeSession !== sessionID) {
       return res.status(400).send("User is already logged in");
     }
+    
+    // Update user's active session
+    await usersCollection.updateOne(
+      { _id: user._id },
+      { $set: { activeSession: sessionID } }
+    );
     
     res.send({ message: "Logged in successfully", userId: user._id });
   } catch (error) {
@@ -94,6 +103,7 @@ app.post("/login", async (req, res) => {
     res.status(500).send("An error occurred while logging in.");
   }
 });
+
 
 app.get("/check-auth", (req, res) => {
   const authHeader = req.headers["authorization"];
