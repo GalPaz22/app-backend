@@ -65,12 +65,7 @@ const sessionMemory = {};
 
 // Middleware to check session validity and expiration
 const checkSession = async (req, res, next) => {
-  const sessionID = req.headers["sessionid"];
-
-  if (!sessionID) {
-    return res.status(401).send("Session ID required");
-  }
-
+ 
   try {
     const db = client.db("Cluster0");
     const sessionsCollection = db.collection("sessions");
