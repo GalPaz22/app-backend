@@ -70,6 +70,9 @@ app.use(
 const upload = multer({ dest: "uploads/" });
 const sessionMemory = {};
 
+const { v4: uuidv4 } = require('uuid'); // Import UUID library
+const bcrypt = require('bcrypt');
+
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
@@ -89,15 +92,24 @@ app.post("/login", async (req, res) => {
     
     // Check if the user has an active session
     if (user.activeSession) {
-      // Check if the session exists in the sessions collection
+      // Check if the session exists in the sessions collection and if it's expired
       const activeSession = await sessionsCollection.findOne({ sessionID: user.activeSession });
       if (activeSession) {
-        return res.status(400).send("User is already logged in");
+        if (activeSession.expiresAt < new Date()) {
+          // If the session is expired, remove it from the user document
+          await usersCollection.updateOne(
+            { _id: user._id },
+            { $unset: { activeSession: "" } }
+          );
+        } else {
+          return res.status(400).send("User is already logged in");
+        }
       }
     }
     
     // Generate a new session ID
     const sessionID = uuidv4(); // Use a UUID library to generate a unique session ID
+    const expiresAt = new Date(Date.now() +  60 * 1000); // 24 hours
     
     // Update user's active session
     await usersCollection.updateOne(
@@ -106,7 +118,7 @@ app.post("/login", async (req, res) => {
     );
     
     // Create a new session document in the sessions collection
-    await sessionsCollection.insertOne({ sessionID, userID: user._id });
+    await sessionsCollection.insertOne({ sessionID, userID: user._id, expiresAt });
     
     res.send("Login successful");
     
