@@ -76,8 +76,9 @@ app.post("/login", async (req, res) => {
     return res.status(400).send("Email and password are required");
   
   try {
-    const db = client.db("Cluster0"); // Update with your database name
+    const db = client.db("Cluster0"); // Update with your main database name
     const usersCollection = db.collection("users");
+    const sessionsCollection = client.db("test").collection("sessions"); // New line
     
     const user = await usersCollection.findOne({ email });
     
@@ -91,16 +92,23 @@ app.post("/login", async (req, res) => {
       return res.status(400).send("User is already logged in");
     }
     
+    // Check if the session exists in the sessions collection
+    const activeSession = await sessionsCollection.findOne({ sessionID });
+    if (activeSession) {
+      return res.status(400).send("User is already logged in");
+    }
+    
     // Update user's active session
     await usersCollection.updateOne(
       { _id: user._id },
       { $set: { activeSession: sessionID } }
     );
     
-    res.send({ message: "Logged in successfully", userId: user._id });
+    res.send("Login successful");
+    
   } catch (error) {
-    console.error("Error logging in:", error);
-    res.status(500).send("An error occurred while logging in.");
+    console.error("Error during login:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
