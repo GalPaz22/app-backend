@@ -148,7 +148,7 @@ app.post("/logout", async (req, res) => {
 
     // Update user's active session to an empty string
     await usersCollection.updateOne(
-      { _id: new MongoClient(userId) },
+      { _id: new MongoClient.ObjectId(userId) },
       { $set: { activeSession: "" } }
     );
 
