@@ -16,7 +16,6 @@ import { Session } from "express-session";
 const app = express();
 const port = 4000;
 
-
 const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri, {
   useNewUrlParser: true,
@@ -24,13 +23,13 @@ const client = new MongoClient(mongoUri, {
 });
 
 client
-.connect()
-.then(() => {
-  console.log("Connected to MongoDB");
-})
-.catch((err) => {
-  console.error("Error connecting to MongoDB:", err);
-});
+  .connect()
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((err) => {
+    console.error("Error connecting to MongoDB:", err);
+  });
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -42,7 +41,6 @@ app.use(
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "sessionID"],
-
   })
 );
 
@@ -53,16 +51,12 @@ app.use(
     saveUninitialized: true,
     store: MongoStore.create({
       clientPromise: client.connect(),
-    
-    
     }),
     cookie: {
       maxAge: 1 * 30 * 60 * 1000, // 24 hours
       secure: true, // Set to true if using HTTPS
       httpOnly: false,
       sameSite: "strict",
-      
-      
     },
   })
 );
@@ -70,30 +64,29 @@ app.use(
 const upload = multer({ dest: "uploads/" });
 const sessionMemory = {};
 
-
-
-
 app.post("/login", async (req, res) => {
-  const { email, password, } = req.body;
+  const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).send("Email and password are required");
-  
+
   try {
     const db = client.db("Cluster0"); // Update with your main database name
     const usersCollection = db.collection("users");
     const sessionsCollection = client.db("test").collection("sessions");
-    
+
     const user = await usersCollection.findOne({ email });
-    
+
     if (!user) return res.status(404).send("User not found");
-    
+
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
     const sessionID = uuidv4();
     // Check if the user has an active session
     if (user.activeSession) {
       // Check if the session exists in the sessions collection and if it's expired
-      const activeSession = await sessionsCollection.findOne({ sessionID: user.activeSession });
+      const activeSession = await sessionsCollection.findOne({
+        sessionID: user.activeSession,
+      });
       if (activeSession) {
         if (activeSession.expiresAt < new Date()) {
           // If the session is expired, remove it from the user document
@@ -105,38 +98,51 @@ app.post("/login", async (req, res) => {
           return res.status(400).send("User is already logged in");
         }
       }
-    }
-    
+    } // Use a UUID library to generate a unique session ID
+
     // Generate a new session ID
-  ; // Use a UUID library to generate a unique session ID
-    const expiresAt = new Date(Date.now() +  60 * 1000); // 24 hours
-    
+    const expiresAt = new Date(Date.now() + 60 * 1000); // 24 hours
+
     // Update user's active session
     await usersCollection.updateOne(
       { _id: user._id },
       { $set: { activeSession: sessionID } }
     );
-    
+
     // Create a new session document in the sessions collection
-    await sessionsCollection.insertOne({ sessionID, userID: user._id, expiresAt });
-    
+    await sessionsCollection.insertOne({
+      sessionID,
+      userID: user._id,
+      expiresAt,
+    });
+
     res.send("Login successful");
-    
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).send("Internal Server Error");
   }
 });
+const checksession = async (req, res) => {
+const activeSession = await sessionsCollection.findOne({ sessionID: user.activeSession });
+if (activeSession) {
+  if (activeSession.expiresAt < new Date()) {
+    // If the session is expired, remove it from the user document
+    await usersCollection.updateOne(
+      { _id: user._id },
+      { $unset: { activeSession: "" } }
+    );
+  } else {
+    return res.status(401).send("User is already logged in");
+    
+  }
+}}
 
-app.get("/check-auth", (req, res) => {
+app.get("/check-auth", checksession, (req, res) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader) {
     return res.status(401).json({ authenticated: false });
-
   }
-  
-  
-  
+
   const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
   if (userId) {
     return res.json({ authenticated: true });
@@ -168,7 +174,9 @@ const authenticate = async (req, res, next) => {
     // Find the session in the database using userId
     const db = client.db("Cluster0");
     const sessionCollection = db.collection("test_sessions");
-    const session = await sessionCollection.findOne({  userId: ObjectId(userId) });
+    const session = await sessionCollection.findOne({
+      userId: ObjectId(userId),
+    });
 
     if (!session) {
       return res.status(401).send("Invalid session");
@@ -176,38 +184,36 @@ const authenticate = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Database error:', error);
+    console.error("Database error:", error);
     res.status(500).send("Internal server error");
   }
 };
 app.post(
   "/generate-response",
   upload.single("file"),
-  
+
   async (req, res) => {
     const { question, sessionId, apiKey } = req.body;
     const filePath = req.file.path;
-    
-    
+
     try {
       const loader = new PDFLoader(filePath);
       const docs = await loader.load();
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
-      
-      
+
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
-      
+
       const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${pdfText}\n\n${conversationHistory.join(
         "\n"
       )}\nAssistant:`;
-      
+
       const model = new ChatAnthropicMessages({
         apiKey: apiKey, // Use API key from request body
         model: "claude-3-sonnet-20240229",
       });
-      
+
       const response = await model.invoke(inputText);
       const content = response.text.trim();
       conversationHistory.push(`Assistant: ${content}`);
