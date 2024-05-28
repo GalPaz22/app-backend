@@ -127,7 +127,7 @@ app.post("/login", async (req, res) => {
     // Generate a new session ID if the user does not have an active session
     if (!sessionID) {
       sessionID = uuidv4();
-      expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      expiresAt = new Date(Date.now() +  60 * 1000); // 24 hours
 
       // Update user's active session
       await usersCollection.updateOne(
