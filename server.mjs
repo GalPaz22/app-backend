@@ -4,7 +4,7 @@ import session from "express-session";
 import bodyParser from "body-parser";
 import cors from "cors";
 import bcrypt from "bcrypt";
-import { MongoClient, ObjectID } from "mongodb";
+import { MongoClient } from "mongodb";
 import multer from "multer";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
