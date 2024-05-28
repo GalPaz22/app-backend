@@ -4,7 +4,7 @@ import session from "express-session";
 import bodyParser from "body-parser";
 import cors from "cors";
 import bcrypt from "bcrypt";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectID } from "mongodb";
 import multer from "multer";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
@@ -138,18 +138,17 @@ app.get("/check-auth", (req, res) => {
 });
 
 app.post("/logout", async (req, res) => {
-
-
-
+  const authHeader = req.headers["authorization"];
   const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
 
   try {
     const db = client.db("Cluster0");
     const usersCollection = db.collection("users");
+;
 
     // Update user's active session to an empty string
     await usersCollection.updateOne(
-      { _id: new MongoClient.ObjectID(userId) },
+      { _id: new MongoClient.ObjectId(userId) },
       { $set: { activeSession: "" } }
     );
 
