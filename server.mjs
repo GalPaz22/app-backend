@@ -131,9 +131,9 @@ app.get("/check-auth", (req, res) => {
     return res.status(401).json({ authenticated: false });
   }
 });
-app.post("/logout", async (req, res) => {
- 
- 
+
+app.get("/logout", async (req, res) => {
+  
   try {
   const db = client.db("Cluster0");
   const usersCollection = db.collection("users");
