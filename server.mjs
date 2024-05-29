@@ -139,7 +139,7 @@ app.get("/check-auth", (req, res) => {
 
 app.post("/logout", async (req, res) => {
   const authHeader = req.headers["authorization"];
-  const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
+  // Assuming the format is 'Bearer userId'
 
   try {
     const db = client.db("Cluster0");
