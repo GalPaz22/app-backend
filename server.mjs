@@ -152,7 +152,7 @@ app.post("/logout", async (req, res) => {
     // Remove the active session from the user document
     await usersCollection.updateOne(
       { _id: user._id },
-      { $unset: { activeSession: "" } }
+      { $set: { activeSession: "" } }
     );
   
     // Delete the session document from the sessions collection
