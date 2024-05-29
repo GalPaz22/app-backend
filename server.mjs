@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
-import { Session } from "express-session";
+
 
 const app = express();
 const port = 4000;
@@ -54,7 +54,7 @@ app.use(
       clientPromise: client.connect(),
     }),
     cookie: {
-      maxAge: 60 * 1000, // 1 minute
+      maxAge: 60 * 60 * 1000, // 1 minute
       secure: true, // Set to true if using HTTPS
       httpOnly: false,
       sameSite: "strict",
