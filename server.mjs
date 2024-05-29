@@ -52,6 +52,9 @@ app.use(
     saveUninitialized: true,
     store: MongoStore.create({
       clientPromise: client.connect(),
+      cookie: {
+        maxAge: 1000 * 60 * 60, // 1 hour
+      },
     }),
   })
 );
@@ -105,11 +108,7 @@ app.post("/login", async (req, res) => {
     );
 
     // Create a new session document in the sessions collection
-    await sessionsCollection.insertOne({
-      sessionID,
-      userID: user._id,
-      expiresAt,
-    });
+
 
     res.send("Login successful");
   } catch (error) {
