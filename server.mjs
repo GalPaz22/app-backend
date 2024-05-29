@@ -136,39 +136,43 @@ app.get("/check-auth", (req, res) => {
     return res.status(401).json({ authenticated: false });
   }
 });
-
 app.post("/logout", async (req, res) => {
-  const authHeader = req.headers["authorization"];
-  console.log(authHeader);
-  // Assuming the format is 'Bearer userId'
-
+  if (!req.session || !req.session.userId) {
+  return res.status(401).send("Unauthorized");
+  }
+  const userId = req.session.userId;
   try {
-    const db = client.db("Cluster0");
-    const usersCollection = db.collection("users");
-    const user = await usersCollection.findOne({ _id: authHeader });
-    if (!user) {
-      return res.status(404).send("User not found");
-
-    }
-
-    // Update user's active session to an empty string
+  const db = client.db("Cluster0");
+  const usersCollection = db.collection("users");
+  const sessionsCollection = client.db("test").collection("sessions");
+  const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
+  
+  if (!user) return res.status(404).send("User not found");
+  
+  if (user.activeSession) {
+    // Remove the active session from the user document
     await usersCollection.updateOne(
       { _id: user._id },
-      { $unset: {activeSession: " "} }
+      { $unset: { activeSession: "" } }
     );
-
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).send("Could not log out");
-      } else {
-        res.send("Logged out successfully");
-      }
-    });
-  } catch (error) {
-    console.error("Error during logout:", error);
-    res.status(500).send("Internal Server Error");
+  
+    // Delete the session document from the sessions collection
+    await sessionsCollection.deleteOne({ sessionID: user.activeSession });
   }
-});
+  
+  // Destroy the session
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Error destroying session:", err);
+    }
+    res.send("Logout successful");
+  });
+  } catch (error) {
+  console.error("Error during logout:", error);
+  res.status(500).send("Internal Server Error");
+  }
+  });
+
 
 app.post(
   "/generate-response",
