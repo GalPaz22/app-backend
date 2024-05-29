@@ -139,24 +139,31 @@ app.get("/check-auth", (req, res) => {
 
 app.post("/logout", async (req, res) => {
   const authHeader = req.headers["authorization"];
+  if (!authHeader) {
+    return res.status(400).send("No authorization header provided");
+  }
+
   const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
+  if (!userId || !ObjectId.isValid(userId)) {
+    return res.status(400).send("Invalid user ID format");
+  }
 
   try {
     const db = client.db("Cluster0");
     const usersCollection = db.collection("users");
-    const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
-    if (!userId) {
-      return res.status(400).send("Invalid authorization format");
-    }
 
-    // Update user's active session to an empty string
-    await usersCollection.updateOne(
+    const result = await usersCollection.updateOne(
       { _id: new ObjectId(userId) },
       { $set: { activeSession: "" } }
     );
 
+    if (result.modifiedCount === 0) {
+      return res.status(404).send("User not found or session not active");
+    }
+
     req.session.destroy((err) => {
       if (err) {
+        console.error("Error destroying session:", err);
         return res.status(500).send("Could not log out");
       } else {
         res.send("Logged out successfully");
