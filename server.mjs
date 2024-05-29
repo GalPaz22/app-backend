@@ -15,6 +15,7 @@ import { Session } from "express-session";
 
 const app = express();
 const port = 4000;
+const sessionID = uuidv4();
 
 const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri, {
@@ -80,7 +81,7 @@ app.post("/login", async (req, res) => {
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(403).send("Invalid credentials");
-    const sessionID = uuidv4();
+    
     // Check if the user has an active session
     if (user.activeSession) {
       // Check if the session exists in the sessions collection and if it's expired
@@ -137,15 +138,13 @@ app.get("/check-auth", (req, res) => {
   }
 });
 app.post("/logout", async (req, res) => {
-  if (!req.session || !req.session.userId) {
-  return res.status(401).send("Unauthorized");
-  }
-  const userId = req.session.userId;
+ 
+ 
   try {
   const db = client.db("Cluster0");
   const usersCollection = db.collection("users");
   const sessionsCollection = client.db("test").collection("sessions");
-  const user = await usersCollection.findOne({ _id: new ObjectId(userId) });
+  const user = await usersCollection.findOne({activeSession: sessionID} );
   
   if (!user) return res.status(404).send("User not found");
   
