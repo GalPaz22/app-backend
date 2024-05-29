@@ -53,12 +53,6 @@ app.use(
     store: MongoStore.create({
       clientPromise: client.connect(),
     }),
-    cookie: {
-      maxAge: 60 * 60 * 1000, // 1 minute
-      secure: true, // Set to true if using HTTPS
-      httpOnly: false,
-      sameSite: "strict",
-    },
   })
 );
 
