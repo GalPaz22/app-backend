@@ -132,8 +132,8 @@ app.get("/check-auth", (req, res) => {
   }
 });
 
-app.get("/logout", async (req, res) => {
-  
+app.post("/logout", async (req, res) => {
+
   try {
   const db = client.db("Cluster0");
   const usersCollection = db.collection("users");
@@ -152,14 +152,7 @@ app.get("/logout", async (req, res) => {
     // Delete the session document from the sessions collection
     await sessionsCollection.deleteOne({ sessionID: sessionID });
   }
-  
-  // Destroy the session
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("Error destroying session:", err);
-    }
-    res.send("Logout successful");
-  });
+
   } catch (error) {
   console.error("Error during logout:", error);
   res.status(500).send("Internal Server Error");
