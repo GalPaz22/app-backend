@@ -148,7 +148,7 @@ app.post("/logout", async (req, res) => {
 
     // Update user's active session to an empty string
     await usersCollection.updateOne(
-      { _id: ObjectId(userId) },
+      { _id: new ObjectId(userId) },
       { $set: { activeSession: "" } }
     );
 
