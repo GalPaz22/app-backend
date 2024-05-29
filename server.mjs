@@ -42,6 +42,7 @@ app.use(
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "sessionID"],
+    
   })
 );
 
@@ -53,7 +54,7 @@ app.use(
     store: MongoStore.create({
       clientPromise: client.connect(),
       cookie: {
-        maxAge: 1000 * 60 * 60, // 1 hour
+        maxAge: 1000 * 60 * 60 ,// 7 days
       },
     }),
   })
@@ -108,7 +109,11 @@ app.post("/login", async (req, res) => {
     );
 
     // Create a new session document in the sessions collection
-
+    await sessionsCollection.insertOne({
+      sessionID,
+      userID: user._id,
+      expiresAt,
+    });
 
     res.send("Login successful");
   } catch (error) {
@@ -145,7 +150,7 @@ app.post("/logout", async (req, res) => {
     // Remove the active session from the user document
     await usersCollection.updateOne(
       { _id: user._id },
-      { $set: { activeSession: "" } }
+      { $unset: { activeSession: "" } }
     );
   
     // Delete the session document from the sessions collection
