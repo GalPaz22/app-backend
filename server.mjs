@@ -144,7 +144,10 @@ app.post("/logout", async (req, res) => {
   try {
     const db = client.db("Cluster0");
     const usersCollection = db.collection("users");
-;
+    const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
+    if (!userId) {
+      return res.status(400).send("Invalid authorization format");
+    }
 
     // Update user's active session to an empty string
     await usersCollection.updateOne(
