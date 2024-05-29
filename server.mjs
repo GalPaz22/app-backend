@@ -154,7 +154,9 @@ app.post("/logout", async (req, res) => {
     );
   
     // Delete the session document from the sessions collection
-    await sessionsCollection.deleteOne({ sessionID: sessionID });
+    await sessionsCollection.deleteOne({ sessionID: user.activeSession });
+  
+    res.send("Logout successful");
   }
 
   } catch (error) {
