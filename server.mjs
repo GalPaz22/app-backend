@@ -139,6 +139,7 @@ app.get("/check-auth", (req, res) => {
 
 app.post("/logout", async (req, res) => {
   const authHeader = req.headers["authorization"];
+  console.log(authHeader);
   // Assuming the format is 'Bearer userId'
 
   try {
