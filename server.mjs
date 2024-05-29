@@ -144,14 +144,15 @@ app.post("/logout", async (req, res) => {
   try {
     const db = client.db("Cluster0");
     const usersCollection = db.collection("users");
-    const userId = authHeader.split(" ")[1]; // Assuming the format is 'Bearer userId'
-    if (!userId) {
-      return res.status(400).send("Invalid authorization format");
+    const user = await usersCollection.findOne({ _id: authHeader });
+    if (!user) {
+      return res.status(404).send("User not found");
+
     }
 
     // Update user's active session to an empty string
     await usersCollection.updateOne(
-      { _id: userId },
+      { _id: user._id },
       { $unset: {activeSession: " "} }
     );
 
