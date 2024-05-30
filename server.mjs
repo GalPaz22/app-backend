@@ -54,7 +54,11 @@ app.use(
     store: MongoStore.create({
       clientPromise: client.connect(),
       cookie: {
-        maxAge: 1000 * 60 * 60 ,// 7 days
+        maxAge: 1000 * 60 * 60 ,
+        secure: true, 
+        sameSite: "none",  
+        httpOnly: true, 
+            
       },
     }),
   })
@@ -64,7 +68,7 @@ const upload = multer({ dest: "uploads/" });
 const sessionMemory = {};
 
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, } = req.body;
   if (!email || !password)
     return res.status(400).send("Email and password are required");
 
@@ -124,6 +128,8 @@ app.post("/login", async (req, res) => {
 
 app.get("/check-auth", (req, res) => {
   const authHeader = req.headers["authorization"];
+  const db = client.db("Cluster0");
+  const usersCollection = db.collection("users");
   if (!authHeader) {
     return res.status(401).json({ authenticated: false });
   }
@@ -132,6 +138,10 @@ app.get("/check-auth", (req, res) => {
   if (userId) {
     return res.json({ authenticated: true });
   } else {
+    usersCollection.updateOne(
+      { _id: user._id },
+      { $unset: { activeSession: "" } }
+    );
     return res.status(401).json({ authenticated: false });
   }
 });
