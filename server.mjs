@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
-import { TextSplitter } from "@langchain/textsplitters";
+import { CharacterTextSplitter } from "@langchain/textsplitters";
 
 const app = express();
 const port = 4000;
@@ -174,7 +174,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionId || uuidv4();
 
-    const textSplitter = new TextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
+    const textSplitter = new CharacterTextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
     const splitDocs = await textSplitter.splitText(pdfText);
 
     // Store split documents in MongoDB with vector embeddings
