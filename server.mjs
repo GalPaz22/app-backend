@@ -12,6 +12,7 @@ import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
 import { ChromaClient } from "chromadb";
+import  {TextSplitter}  from "@langchain/textsplitters";
 
 
 
@@ -188,7 +189,7 @@ app.post("/logout", async (req, res) => {
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
   
-      const textSplitter = new TextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
+      const textSplitter = new  TextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
       const splitDocs = await textSplitter.splitText(pdfText);
   
       // Create a Chroma client
