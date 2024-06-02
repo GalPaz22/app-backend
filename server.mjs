@@ -11,8 +11,8 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
-import { ChromaClient } from "chromadb";
-import  {RecursiveCharacterTextSplitter }  from "@langchain/textsplitters";
+import { HfInference} from "@huggingface/inference";
+import  {TextSplitter}  from "@langchain/textsplitters";
 
 
 
@@ -182,50 +182,64 @@ app.post("/logout", async (req, res) => {
   app.post("/generate-response", upload.single("file"), async (req, res) => {
     const { question, sessionId } = req.body;
     const filePath = req.file.path;
-  
+    const dbName = "Cluster0";
+    const collectionName = "documents";
+   
+
     try {
       const loader = new PDFLoader(filePath);
       const docs = await loader.load();
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
   
-      const textSplitter = new  RecursiveCharacterTextSplitter ({ chunkSize: 1000, chunkOverlap: 100 });
+      const textSplitter = new TextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
       const splitDocs = await textSplitter.splitText(pdfText);
   
-      // Create a Chroma client
-      const chromaClient = new ChromaClient();
+      // Create a MongoDB client
+      const mongoClient = new MongoClient(mongoURL);
+      await mongoClient.connect();
+      const db = mongoClient.db(dbName);
+      const collection = db.collection(collectionName);
   
-      // Create a collection in Chroma
-      const collectionName = "documents";
-      await chromaClient.createCollection(collectionName);
-  
-      // Generate embeddings for split documents and insert them into Chroma
+      // Generate embeddings for split documents and insert them into MongoDB
       for (const doc of splitDocs) {
-        const embedding = await chromaClient.embed(doc);
-        await chromaClient.insert(collectionName, [{ id: uuidv4(), text: doc, embedding }]);
+        const model = new HfInference({
+          model: "sentence-transformers/all-MiniLM-L6-v2",
+          
+        });
+        const embedding = await model.embed(doc);
+        await collection.insertOne({ text: doc, embedding });
       }
   
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
   
       // Generate embedding for the question
-      const questionEmbedding = await chromaClient.embed(question);
+      const model = new HuggingFaceInference({
+        model: "sentence-transformers/all-MiniLM-L6-v2",
+      });
+      const questionEmbedding = await model.embed(question);
   
-      // Query Chroma for relevant documents based on the question embedding
-      const relevantDocs = await chromaClient.query(collectionName, questionEmbedding, 5);
+      // Query MongoDB for relevant documents based on the question embedding
+      const relevantDocs = await collection
+        .find({
+          embedding: { $nearSphere: { $geometry: questionEmbedding, $maxDistance: 0.5 } },
+        })
+        .limit(5)
+        .toArray();
   
-      const context = relevantDocs.map(doc => doc.text).join("\n\n");
+      const context = relevantDocs.map((doc) => doc.text).join("\n\n");
   
       const inputText = `Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document. answer in academic manner, and dont include other question by your own- answer only to the question you've got\n\n${context}\n\n${conversationHistory.join(
         "\n"
       )}\nAssistant:`;
   
-      const model = new ChatAnthropicMessages({
+      const chatModel = new ChatAnthropicMessages({
         apiKey: apiKey,
         model: "claude-3-sonnet-20240229",
       });
   
-      const response = await model.invoke(inputText);
+      const response = await chatModel.invoke(inputText);
       const content = response.text.trim();
       conversationHistory.push(`Assistant: ${content}`);
       sessionMemory[currentSessionId] = conversationHistory;
