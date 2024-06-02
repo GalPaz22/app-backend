@@ -163,6 +163,7 @@ app.post("/logout", async (req, res) => {
   }
 });
 
+
 app.post("/generate-response", upload.single("file"), async (req, res) => {
   const { question, sessionId } = req.body;
   const filePath = req.file.path;
@@ -174,7 +175,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const currentSessionId = sessionId || uuidv4();
 
     const textSplitter = new TextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
-    const splitDocs = await textSplitter.split(pdfText);
+    const splitDocs = await textSplitter.splitText(pdfText);
 
     // Store split documents in MongoDB with vector embeddings
     const db = client.db("VectorDB");
