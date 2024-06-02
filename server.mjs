@@ -174,37 +174,24 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionId || uuidv4();
 
-    const textSplitter = new CharacterTextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
+    const textSplitter = new TextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
     const splitDocs = await textSplitter.splitText(pdfText);
 
-    // Store split documents in MongoDB with vector embeddings
+    // Store split documents in MongoDB
     const db = client.db("VectorDB");
-    const vectorsCollection = db.collection("vectors");
+    const textsCollection = db.collection("texts");
 
     for (const doc of splitDocs) {
-      const embedding = await getEmbedding(doc.text); // Assume getEmbedding is a function that returns the vector embedding of the text
-      await vectorsCollection.insertOne({
-        text: doc.text,
-        embedding,
+      await textsCollection.insertOne({
+        text: doc,
       });
     }
 
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
 
-    // Convert question to embedding and query MongoDB for relevant vectors
-    const queryEmbedding = await getEmbedding(question);
-    const relevantDocs = await vectorsCollection.aggregate([
-      {
-        $search: {
-          knnBeta: {
-            vector: queryEmbedding,
-            path: "embedding",
-            k: 5,
-          },
-        },
-      },
-    ]).toArray();
+    // Query MongoDB for relevant documents based on the question
+    const relevantDocs = await textsCollection.find({ text: question }).toArray();
 
     const context = relevantDocs.map(doc => doc.text).join("\n\n");
 
@@ -239,7 +226,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     res.status(500).send("An error occurred while generating the response.");
   }
 });
-
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
