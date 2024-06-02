@@ -192,7 +192,7 @@ app.post(
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
 
-      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${pdfText}\n\n${conversationHistory.join(
+      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document. answer in academic manner, and dont include other question by your own- answer only to the question you've got\n\n${pdfText}\n\n${conversationHistory.join(
         "\n"
       )}\nAssistant:`;
 
