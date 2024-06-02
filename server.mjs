@@ -12,7 +12,7 @@ import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
 import { HfInference} from "@huggingface/inference";
-import  {TextSplitter}  from "@langchain/textsplitters";
+import  {RecursiveCharacterTextSplitter}  from "@langchain/textsplitters";
 
 
 
@@ -192,7 +192,7 @@ app.post("/logout", async (req, res) => {
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
   
-      const textSplitter = new TextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
+      const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
       const splitDocs = await textSplitter.splitText(pdfText);
   
       // Create a MongoDB client
@@ -215,8 +215,9 @@ app.post("/logout", async (req, res) => {
       conversationHistory.push(`User: ${question}`);
   
       // Generate embedding for the question
-      const model = new HuggingFaceInference({
+      const model = new HfInference({
         model: "sentence-transformers/all-MiniLM-L6-v2",
+        
       });
       const questionEmbedding = await model.embed(question);
   
