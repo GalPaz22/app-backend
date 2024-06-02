@@ -11,6 +11,8 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
+import { ChromaClient } from "chromadb";
+
 
 
 const app = express();
@@ -176,43 +178,63 @@ app.post("/logout", async (req, res) => {
   });
 
 
-app.post(
-  "/generate-response",
-  upload.single("file"),
-  async (req, res) => {
+  app.post("/generate-response", upload.single("file"), async (req, res) => {
     const { question, sessionId } = req.body;
     const filePath = req.file.path;
-
+  
     try {
       const loader = new PDFLoader(filePath);
       const docs = await loader.load();
-      
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
-
+  
+      const textSplitter = new TextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
+      const splitDocs = await textSplitter.splitText(pdfText);
+  
+      // Create a Chroma client
+      const chromaClient = new ChromaClient();
+  
+      // Create a collection in Chroma
+      const collectionName = "documents";
+      await chromaClient.createCollection(collectionName);
+  
+      // Generate embeddings for split documents and insert them into Chroma
+      for (const doc of splitDocs) {
+        const embedding = await chromaClient.embed(doc);
+        await chromaClient.insert(collectionName, [{ id: uuidv4(), text: doc, embedding }]);
+      }
+  
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
-
-      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document. answer in academic manner, and dont include other question by your own- answer only to the question\n\n${pdfText}\n\n${conversationHistory.join(
+  
+      // Generate embedding for the question
+      const questionEmbedding = await chromaClient.embed(question);
+  
+      // Query Chroma for relevant documents based on the question embedding
+      const relevantDocs = await chromaClient.query(collectionName, questionEmbedding, 5);
+  
+      const context = relevantDocs.map(doc => doc.text).join("\n\n");
+  
+      const inputText = `Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document. answer in academic manner, and dont include other question by your own- answer only to the question you've got\n\n${context}\n\n${conversationHistory.join(
         "\n"
       )}\nAssistant:`;
-
+  
       const model = new ChatAnthropicMessages({
-        apiKey: apiKey, // Use API key from request body
+        apiKey: apiKey,
         model: "claude-3-sonnet-20240229",
       });
-
+  
       const response = await model.invoke(inputText);
       const content = response.text.trim();
       conversationHistory.push(`Assistant: ${content}`);
       sessionMemory[currentSessionId] = conversationHistory;
-
+  
       fs.unlink(filePath, (err) => {
         if (err) {
           console.error("Error deleting file:", err);
         }
       });
-
+  
       res.json({ sessionId: currentSessionId, answer: content });
     } catch (error) {
       console.error("Error generating response:", error);
@@ -223,8 +245,7 @@ app.post(
       });
       res.status(500).send("An error occurred while generating the response.");
     }
-  }
-);
+  });
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
