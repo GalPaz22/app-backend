@@ -9,7 +9,7 @@ import multer from "multer";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
-import { PDFLoader } from "langchain/document_loaders/fs/pdf";
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
 
 
@@ -186,19 +186,20 @@ app.post(
     try {
       const loader = new PDFLoader(filePath);
       const docs = await loader.load();
+      
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
 
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
 
-      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document. answer in academic manner, and dont include other question by your own- answer only to the question you've\n\n${pdfText}\n\n${conversationHistory.join(
+      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document. answer in academic manner, and dont include other question by your own- answer only to the question\n\n${pdfText}\n\n${conversationHistory.join(
         "\n"
       )}\nAssistant:`;
 
       const model = new ChatAnthropicMessages({
         apiKey: apiKey, // Use API key from request body
-        model: "claude-3-sonnet-20240229",
+        model: "claude-3-opus-20240229",
       });
 
       const response = await model.invoke(inputText);
