@@ -16,7 +16,7 @@ import MongoStore from "connect-mongo";
 const app = express();
 const port = 4000;
 const sessionID = uuidv4();
-const apiKey = process.env.API_KEY; // Use a strong secret key and store it securely
+
 const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri, {
   useNewUrlParser: true,
