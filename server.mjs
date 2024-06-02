@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
-import { TextSplitter } from "@langchain/split";
+import { TextSplitter } from "@langchain/textsplitters";
 
 const app = express();
 const port = 4000;
