@@ -16,7 +16,7 @@ import MongoStore from "connect-mongo";
 const app = express();
 const port = 4000;
 const sessionID = uuidv4();
-
+const apiKey = process.env.API_KEY;
 const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri, {
   useNewUrlParser: true,
@@ -180,7 +180,7 @@ app.post(
   "/generate-response",
   upload.single("file"),
   async (req, res) => {
-    const { question, sessionId, apiKey } = req.body;
+    const { question, sessionId } = req.body;
     const filePath = req.file.path;
 
     try {
