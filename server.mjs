@@ -174,7 +174,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionId || uuidv4();
 
-    const textSplitter = new TextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
+    const textSplitter = new CharacterTextSplitter ({ chunkSize: 1000, chunkOverlap: 100 });
     const splitDocs = await textSplitter.splitText(pdfText);
 
     // Store split documents in MongoDB
