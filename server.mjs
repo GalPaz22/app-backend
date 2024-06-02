@@ -196,9 +196,9 @@ app.post("/logout", async (req, res) => {
       const splitDocs = await textSplitter.splitText(pdfText);
   
       // Create a MongoDB client
-      const mongoClient = new MongoClient(mongoURL);
-      await mongoClient.connect();
-      const db = mongoClient.db(dbName);
+      
+      await client.connect();
+      const db = client.db(dbName);
       const collection = db.collection(collectionName);
   
       // Generate embeddings for split documents and insert them into MongoDB
@@ -217,7 +217,7 @@ app.post("/logout", async (req, res) => {
       // Generate embedding for the question
       const model = new HfInference({
         model: "sentence-transformers/all-MiniLM-L6-v2",
-        
+
       });
       const questionEmbedding = await model.embed(question);
   
