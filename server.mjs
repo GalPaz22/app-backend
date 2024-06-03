@@ -13,7 +13,7 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { Pinecone } from '@pinecone-database/pinecone';
+import { Pinecone } from "@pinecone-database/pinecone";
 
 const app = express();
 const port = 4000;
@@ -27,7 +27,7 @@ const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
 });
 
-const INDEX_NAME = "my-pdf-index";
+const INDEX_NAME = "index";
 const index = pinecone.Index(INDEX_NAME);
 
 client.connect()
@@ -43,7 +43,7 @@ app.use(bodyParser.json());
 
 app.use(
   cors({
-    origin: "https://ask-your-doc.vercel.app",  // Your frontend URL
+    origin: "https://ask-your-doc.vercel.app", // Your frontend URL
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
