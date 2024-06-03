@@ -192,7 +192,7 @@ app.post(
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
 
-      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${pdfText}\n\
+      const inputText = ` Answer in the same language you got in the question, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${pdfText}\n\
       )}`;
 
       const model = new ChatAnthropicMessages({
