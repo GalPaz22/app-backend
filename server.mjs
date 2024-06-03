@@ -207,9 +207,12 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       topK: 5,
       includeMetadata: true
     });
-
-    const relevantChunks = queryResponse.results[0].matches.map(match => match.metadata.text);
-
+    
+    let relevantChunks = [];
+    if (queryResponse.results && queryResponse.results.length > 0) {
+      relevantChunks = queryResponse.results[0].matches.map(match => match.metadata.text);
+    }
+    
     const inputText = `Answer in the same language you got in your PDF context, in detail. 
       You'll get graphs and charts sometimes, try to find them in the document.
       Sometimes you add predicted user prompts to the answer by your own,
