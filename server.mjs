@@ -184,7 +184,7 @@ app.post(
 
     try {
       const loader = new PDFLoader(filePath, {
-        splitPages: true});
+        splitPages: false});
       const docs = await loader.load();
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
@@ -194,7 +194,7 @@ app.post(
 
       const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${pdfText}\n\n${conversationHistory.join(
         "\n"
-      )}\nAssistant:`;
+      )}`;
 
       const model = new ChatAnthropicMessages({
         apiKey: apiKey, // Use API key from request body
