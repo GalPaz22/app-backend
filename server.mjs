@@ -196,7 +196,7 @@ app.post("/logout", async (req, res) => {
   
       const context = splitDocs.join("\n\n");
   
-      const inputText = `Answer in the same language you got in your PDF context, in detail. You'll get graphs and charts sometimes, try to find them in the document. Answer in an academic manner, and don't include other questions by your own - answer only the question you've got\n\n${context}\n\n${conversationHistory.join(
+      const inputText = `the context you have is a PDF file splittet into chunks, answer according to the data from the file with the same language youve got in the question\n\n${context}\n\n${conversationHistory.join(
         "\n"
       )}\nAssistant:`;
   
