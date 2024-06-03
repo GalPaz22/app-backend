@@ -11,7 +11,6 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
-import { HfInference} from "@huggingface/inference";
 import  {RecursiveCharacterTextSplitter}  from "@langchain/textsplitters";
 
 
@@ -182,10 +181,7 @@ app.post("/logout", async (req, res) => {
   app.post("/generate-response", upload.single("file"), async (req, res) => {
     const { question, sessionId } = req.body;
     const filePath = req.file.path;
-    const dbName = "Cluster0";
-    const collectionName = "documents";
-   
-
+  
     try {
       const loader = new PDFLoader(filePath);
       const docs = await loader.load();
@@ -195,43 +191,12 @@ app.post("/logout", async (req, res) => {
       const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
       const splitDocs = await textSplitter.splitText(pdfText);
   
-      // Create a MongoDB client
-      
-      await client.connect();
-      const db = client.db(dbName);
-      const collection = db.collection(collectionName);
-  
-      // Generate embeddings for split documents and insert them into MongoDB
-      for (const doc of splitDocs) {
-        const model = new HfInference({
-          model: "sentence-transformers/all-MiniLM-L6-v2",
-          
-        });
-        const embedding = await model.embed(doc);
-        await collection.insertOne({ text: doc, embedding });
-      }
-  
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
   
-      // Generate embedding for the question
-      const model = new HfInference({
-        model: "sentence-transformers/all-MiniLM-L6-v2",
-
-      });
-      const questionEmbedding = await model.embed(question);
+      const context = splitDocs.join("\n\n");
   
-      // Query MongoDB for relevant documents based on the question embedding
-      const relevantDocs = await collection
-        .find({
-          embedding: { $nearSphere: { $geometry: questionEmbedding, $maxDistance: 0.5 } },
-        })
-        .limit(5)
-        .toArray();
-  
-      const context = relevantDocs.map((doc) => doc.text).join("\n\n");
-  
-      const inputText = `Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document. answer in academic manner, and dont include other question by your own- answer only to the question you've got\n\n${context}\n\n${conversationHistory.join(
+      const inputText = `Answer in the same language you got in your PDF context, in detail. You'll get graphs and charts sometimes, try to find them in the document. Answer in an academic manner, and don't include other questions by your own - answer only the question you've got\n\n${context}\n\n${conversationHistory.join(
         "\n"
       )}\nAssistant:`;
   
