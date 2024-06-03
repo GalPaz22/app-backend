@@ -176,55 +176,56 @@ app.post("/logout", async (req, res) => {
   });
 
 
-  app.post(
-    "/generate-response",
-    upload.single("file"),
-    async (req, res) => {
-      const { question, sessionId, apiKey } = req.body;
-      const filePath = req.file.path;
-  
-      try {
-        const dataBuffer = fs.readFileSync(filePath);
-        const data = await pdf(dataBuffer);
-        const pdfText = data.text;
-        const currentSessionId = sessionId || uuidv4();
-  
-        const conversationHistory = sessionMemory[currentSessionId] || [];
-        conversationHistory.push(`User: ${question}`);
-  
-        const inputText = `Answer in the same language you got in your PDF context, in detail. You'll get graphs and charts sometimes, try to find them in the document.\n\n${pdfText}\n\n${conversationHistory.join(
-          "\n"
-        )}\nAssistant:`;
-  
-        const model = new ChatAnthropicMessages({
-          apiKey: apiKey, // Use API key from request body
-          model: "claude-3-sonnet-20240229",
-        });
-  
-        const response = await model.invoke(inputText);
-        const content = response.text.trim();
-        conversationHistory.push(`Assistant: ${content}`);
-        sessionMemory[currentSessionId] = conversationHistory;
-  
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            console.error("Error deleting file:", err);
-          }
-        });
-  
-        res.json({ sessionId: currentSessionId, answer: content });
-      } catch (error) {
-        console.error("Error generating response:", error);
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            console.error("Error deleting file:", err);
-          }
-        });
-        res.status(500).send("An error occurred while generating the response.");
-      }
+app.post(
+  "/generate-response",
+  upload.single("file"),
+  async (req, res) => {
+    const { question, sessionId, apiKey } = req.body;
+    const filePath = req.file.path;
+
+    try {
+      const loader = new PdfParse(filePath, {
+        parsedItemSeparator : "\n",
+      });
+      const docs = await loader.load();
+      const pdfText = docs[0].pageContent;
+      const currentSessionId = sessionId || uuidv4();
+
+      const conversationHistory = sessionMemory[currentSessionId] || [];
+      conversationHistory.push(`User: ${question}`);
+
+      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${pdfText}\n\n${conversationHistory.join(
+        "\n"
+      )}\nAssistant:`;
+
+      const model = new ChatAnthropicMessages({
+        apiKey: apiKey, // Use API key from request body
+        model: "claude-3-sonnet-20240229",
+      });
+
+      const response = await model.invoke(inputText);
+      const content = response.text.trim();
+      conversationHistory.push(`Assistant: ${content}`);
+      sessionMemory[currentSessionId] = conversationHistory;
+
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error("Error deleting file:", err);
+        }
+      });
+
+      res.json({ sessionId: currentSessionId, answer: content });
+    } catch (error) {
+      console.error("Error generating response:", error);
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error("Error deleting file:", err);
+        }
+      });
+      res.status(500).send("An error occurred while generating the response.");
     }
-  );
-  
+  }
+);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
