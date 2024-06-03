@@ -202,17 +202,9 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
         ]);
       })
     );
-    const questionEmbedding = await embeddings.embedQuery(question);
-    const queryResponse = await index.query({
-      vector: questionEmbedding,
-      topK: 5,
-      includeMetadata: true
-    });
-    
-    let relevantChunks = [];
-    if (queryResponse.results && queryResponse.results.length > 0) {
-      relevantChunks = queryResponse.results[0].matches.map(match => match.metadata.text);
-    }
+
+    const results = await index.similaritySearch(question, 3);
+    const relevantChunks = results.map((result) => result.metadata.text);
     
     const inputText = `Answer in the same language you got in your PDF context, in detail. 
       You'll get graphs and charts sometimes, try to find them in the document.
