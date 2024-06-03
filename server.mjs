@@ -189,24 +189,30 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
 
-    // Ensure Pinecone index
-    const index = pinecone.Index(INDEX_NAME);
-    
-    // Upsert embeddings for all chunks
-    const upserts = chunks.map(async (chunk, idx) => {
-      const embedding = await embeddings.embedQuery(chunk);
-      return {
-        id: `${currentSessionId}-${idx}`,
-        values: embedding,
-        metadata: { text: chunk },
-      };
-    });
+    await Promise.all(
+      chunks.map(async (chunk, idx) => {
+        const embedding = await embeddings.embedQuery(chunk);
+        await index.upsert({
+          vectors: [
+            {
+              id: `${currentSessionId}-${idx}`,
+              values: embedding,
+              metadata: { text: chunk }
+            },
+            {
+              id: `${currentSessionId}-${idx}-user`,
+              values: embedding,
+              metadata: { text: `User: ${question}` }
+            }
 
-    // Await all upserts
-    const vectors = await Promise.all(upserts);
 
-    // Perform the actual upsert operation
-    await index.upsert({ vectors });
+
+          
+
+          ]
+        });
+      })
+    );
 
     const questionEmbedding = await embeddings.embedQuery(question);
     const queryResponse = await index.query({
@@ -214,9 +220,9 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
         {
           values: questionEmbedding,
           topK: 5,
-          includeMetadata: true,
-        },
-      ],
+          includeMetadata: true
+        }
+      ]
     });
 
     const relevantChunks = queryResponse.results[0].matches.map(match => match.metadata.text);
