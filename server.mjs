@@ -205,7 +205,7 @@ app.post("/logout", async (req, res) => {
       });
       const chunks = await textSplitter.splitText(pdfText);
   
-      const embeddings = new OpenAIEmbeddings({ openAIApiKey: apiKey });
+      const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
       const chunkEmbeddings = await Promise.all(
         chunks.map((chunk) => embeddings.embedQuery(chunk))
       );
