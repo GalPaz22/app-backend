@@ -9,7 +9,7 @@ import multer from "multer";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
-import { PdfParse } from "pdf-parse";
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
 
 
@@ -184,7 +184,7 @@ app.post(
     const filePath = req.file.path;
 
     try {
-      const loader = new PdfParse(filePath, {
+      const loader = new PDFLoader(filePath, {
         parsedItemSeparator : "\n",
       });
       const docs = await loader.load();
