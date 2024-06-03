@@ -12,6 +12,7 @@ import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
 import { OpenAIEmbeddings } from "@langchain/openai";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 
 const app = express();
