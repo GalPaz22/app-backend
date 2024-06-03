@@ -24,6 +24,13 @@ const client = new MongoClient(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+const pinecone = new PineconeClient();
+pinecone.init({
+  apiKey: process.env.PINECONE_API_KEY, // Ensure you have your Pinecone API key in your environment variables
+  environment: "us-east1-gcp" // Use the appropriate environment for your Pinecone instance
+});
+
+const INDEX_NAME = "my-pdf-index"; // Change the name as per your requirement
 
 client
   .connect()
@@ -183,9 +190,7 @@ app.post("/logout", async (req, res) => {
     const filePath = req.file.path;
   
     try {
-      const loader = new PDFLoader(filePath, {
-        
-      });
+      const loader = new PDFLoader(filePath);
       const docs = await loader.load();
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
@@ -194,23 +199,60 @@ app.post("/logout", async (req, res) => {
       conversationHistory.push(`User: ${question}`);
   
       const textSplitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 1000,
-        chunkOverlap: 200,
+        chunkSize: 500, // You might want to reduce this further if needed
+        chunkOverlap: 100,
       });
       const chunks = await textSplitter.splitText(pdfText);
   
       const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
+  
+      // Ensure the Pinecone index exists or create it
+      await pinecone.createIndex({
+        name: INDEX_NAME,
+        dimension: 1536, // Set the dimension according to your embedding model
+        metric: "cosine"
+      });
+  
+      const index = pinecone.Index(INDEX_NAME);
+  
+      // Store embeddings in Pinecone
       const chunkEmbeddings = await Promise.all(
-        chunks.map((chunk) => embeddings.embedQuery(chunk))
+        chunks.map(async (chunk, idx) => {
+          const embedding = await embeddings.embedQuery(chunk);
+          
+          await index.upsert({
+            vectors: [
+              {
+                id: `${currentSessionId}-${idx}`,
+                values: embedding,
+                metadata: { text: chunk }
+              }
+            ]
+          });
+  
+          return embedding;
+        })
       );
-   
   
-     
-      const relevantChunks = chunkEmbeddings.map((index) => chunks[index]);
+      // For simplicity's sake, let's embed the question and find the nearest neighbors
+      const questionEmbedding = await embeddings.embedQuery(question);
+      const queryResponse = await index.query({
+        queries: [
+          {
+            values: questionEmbedding,
+            topK: 5, // You can adjust the number of top results fetched
+            includeMetadata: true
+          }
+        ]
+      });
   
-      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document. sometimes you add predicted user prompts to the answer by your own, dont ever do that. just give a clean answer according to the question and the context, which is embedded from the PDF.\n\n${relevantChunks.join(
-        "\n"
-      )}\n\n${conversationHistory.join("\n")}\nAssistant:`;
+      const relevantChunks = queryResponse.results[0].matches.map(match => match.metadata.text);
+  
+      const inputText = `Answer in the same language you got in your PDF context, in detail. 
+        You'll get graphs and charts sometimes, try to find them in the document.
+        Sometimes you add predicted user prompts to the answer by your own,
+        don't ever do that. Just give a clean answer according to the question and the context,
+        which is embedded from the PDF.\n\n${relevantChunks.join("\n")}\n\n${conversationHistory.join("\n")}\nAssistant:`;
   
       const model = new ChatAnthropic({
         apiKey: apiKey,
@@ -228,7 +270,6 @@ app.post("/logout", async (req, res) => {
         }
       });
   
-
       res.json({ sessionId: currentSessionId, answer: content });
     } catch (error) {
       console.error("Error generating response:", error);
