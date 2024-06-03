@@ -190,7 +190,7 @@ app.post("/logout", async (req, res) => {
   
     try {
       const loader = new PDFLoader(filePath, {
-       
+        parsedItemSeparator: "\n",
       });
       const docs = await loader.load();
       const pdfText = docs[0].pageContent;
@@ -199,32 +199,31 @@ app.post("/logout", async (req, res) => {
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
   
-      // Split the PDF text into chunks
       const textSplitter = new RecursiveCharacterTextSplitter({
         chunkSize: 1000,
         chunkOverlap: 200,
       });
       const chunks = await textSplitter.splitText(pdfText);
   
-      // Generate embeddings for the chunks
-      const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
+      const embeddings = new OpenAIEmbeddings({ openAIApiKey: apiKey });
       const chunkEmbeddings = await Promise.all(
-        chunks.map(async (chunk) => {
-          const embedding = await embeddings.embedQuery(chunk);
-          return { chunk, embedding };
-        })
+        chunks.map((chunk) => embeddings.embedQuery(chunk))
       );
-  
-      // Find the most relevant chunk based on the question
       const questionEmbedding = await embeddings.embedQuery(question);
-      const relevantChunk = chunkEmbeddings.reduce((maxChunk, chunk) => {
-        const similarity = cosineSimilarity(questionEmbedding, chunk.embedding);
-        return similarity > maxChunk.similarity ? { chunk, similarity } : maxChunk;
-      }, { chunk: null, similarity: -1 }).chunk;
   
-      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${relevantChunk}\n\n${conversationHistory.join(
+      const similarities = chunkEmbeddings.map((chunkEmbedding) =>
+        cosineSimilarity(chunkEmbedding, questionEmbedding)
+      );
+      const topChunkIndices = similarities
+        .map((similarity, index) => ({ similarity, index }))
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, 3)
+        .map((item) => item.index);
+      const relevantChunks = topChunkIndices.map((index) => chunks[index]);
+  
+      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${relevantChunks.join(
         "\n"
-      )}\nAssistant:`;
+      )}\n\n${conversationHistory.join("\n")}\nAssistant:`;
   
       const model = new ChatAnthropicMessages({
         apiKey: apiKey,
@@ -242,6 +241,7 @@ app.post("/logout", async (req, res) => {
         }
       });
   
+
       res.json({ sessionId: currentSessionId, answer: content });
     } catch (error) {
       console.error("Error generating response:", error);
