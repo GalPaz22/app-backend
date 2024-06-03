@@ -8,7 +8,7 @@ import { MongoClient, ObjectId } from "mongodb";
 import multer from "multer";
 import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
-import { ChatAnthropicMessages } from "@langchain/anthropic";
+import { ChatAnthropic } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
 import { OpenAIEmbeddings } from "@langchain/openai";
@@ -225,7 +225,7 @@ app.post("/logout", async (req, res) => {
         "\n"
       )}\n\n${conversationHistory.join("\n")}\nAssistant:`;
   
-      const model = new ChatAnthropicMessages({
+      const model = new ChatAnthropic({
         apiKey: apiKey,
         model: "claude-3-sonnet-20240229",
       });
