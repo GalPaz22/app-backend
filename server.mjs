@@ -173,7 +173,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
 
   try {
-    const loader = new PDFLoader(filePath, splitPages= true);
+    const loader = new PDFLoader(filePath ) ;
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionId || uuidv4();
@@ -186,6 +186,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       chunkOverlap: 100,
     });
     const chunks = await textSplitter.splitText(pdfText);
+    console.log(chunks);
 
     const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
 
