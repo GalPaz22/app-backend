@@ -184,7 +184,9 @@ app.post(
     const filePath = req.file.path;
 
     try {
-      const loader = new PDFLoader(filePath);
+      const loader = new PDFLoader(filePath, {
+        parsedItemSeparator : "\n",
+      });
       const docs = await loader.load();
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
