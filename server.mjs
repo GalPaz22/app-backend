@@ -27,20 +27,8 @@ const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
 });
 
-const INDEX_NAME = "my-pdf-index";
-
-// Ensure Pinecone index exists
-async function ensurePineconeIndex() {
-  const indexList = await pinecone.listIndexes();
-  if (!indexList.includes(INDEX_NAME)) {
-    await pinecone.createIndex({
-      name: INDEX_NAME,
-      dimension: 1536, // Ensure this matches your embedding model
-      metric: "cosine"
-    });
-  }
-}
-ensurePineconeIndex();
+const INDEX_NAME = "index";
+const index = pinecone.Index(INDEX_NAME);
 
 client.connect()
   .then(() => {
@@ -200,7 +188,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const chunks = await textSplitter.splitText(pdfText);
 
     const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
-    const index = pinecone.Index(INDEX_NAME);
 
     await Promise.all(
       chunks.map(async (chunk, idx) => {
