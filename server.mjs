@@ -176,12 +176,6 @@ app.post("/logout", async (req, res) => {
   res.status(500).send("Internal Server Error");
   }
   });
-  function cosineSimilarity(a, b) {
-    const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
-    const normA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
-    const normB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
-    return dotProduct / (normA * normB);
-  }
 
 
   app.post("/generate-response", upload.single("file"), async (req, res) => {
@@ -209,17 +203,10 @@ app.post("/logout", async (req, res) => {
       const chunkEmbeddings = await Promise.all(
         chunks.map((chunk) => embeddings.embedQuery(chunk))
       );
-      const questionEmbedding = await embeddings.embedQuery(question);
+   
   
-      const similarities = chunkEmbeddings.map((chunkEmbedding) =>
-        cosineSimilarity(chunkEmbedding, questionEmbedding)
-      );
-      const topChunkIndices = similarities
-        .map((similarity, index) => ({ similarity, index }))
-        .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, 3)
-        .map((item) => item.index);
-      const relevantChunks = topChunkIndices.map((index) => chunks[index]);
+     
+      const relevantChunks = chunkEmbeddings.map((index) => chunks[index]);
   
       const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document. sometimes you add predicted user prompts to the answer by your own, dont ever do that. just give a clean answer according to the question and the context, which is embedded from the PDF.\n\n${relevantChunks.join(
         "\n"
