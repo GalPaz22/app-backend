@@ -15,7 +15,8 @@ import MongoStore from "connect-mongo";
 
 const app = express();
 const port = 4000;
-const sessionID = uuidv4();// Use a strong secret key and store it securely
+const sessionID = uuidv4();
+// Use a strong secret key and store it securely
 const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri, {
   useNewUrlParser: true,
@@ -183,8 +184,7 @@ app.post(
     const filePath = req.file.path;
 
     try {
-      const loader = new PDFLoader(filePath, {
-        splitPages: false});
+      const loader = new PDFLoader(filePath);
       const docs = await loader.load();
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
@@ -192,8 +192,9 @@ app.post(
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
 
-      const inputText = ` Answer in the same language you got in the question, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${pdfText}\n\
-      )}`;
+      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${pdfText}\n\n${conversationHistory.join(
+        "\n"
+      )}\nAssistant:`;
 
       const model = new ChatAnthropicMessages({
         apiKey: apiKey, // Use API key from request body
