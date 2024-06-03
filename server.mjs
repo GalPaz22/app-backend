@@ -11,14 +11,11 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropicMessages } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
-import  {RecursiveCharacterTextSplitter}  from "@langchain/textsplitters";
-
 
 
 const app = express();
 const port = 4000;
-const sessionID = uuidv4();
-const apiKey = process.env.API_KEY; // Use a strong secret key and store it securely
+const sessionID = uuidv4();// Use a strong secret key and store it securely
 const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri, {
   useNewUrlParser: true,
@@ -178,44 +175,42 @@ app.post("/logout", async (req, res) => {
   });
 
 
-  app.post("/generate-response", upload.single("file"), async (req, res) => {
-    const { question, sessionId } = req.body;
+app.post(
+  "/generate-response",
+  upload.single("file"),
+  async (req, res) => {
+    const { question, sessionId, apiKey } = req.body;
     const filePath = req.file.path;
-  
+
     try {
       const loader = new PDFLoader(filePath);
       const docs = await loader.load();
       const pdfText = docs[0].pageContent;
       const currentSessionId = sessionId || uuidv4();
-  
-      const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 1000, chunkOverlap: 100 });
-      const splitDocs = await textSplitter.splitText(pdfText);
-  
+
       const conversationHistory = sessionMemory[currentSessionId] || [];
       conversationHistory.push(`User: ${question}`);
-  
-      const context = splitDocs.join("\n\n");
-  
-      const inputText = `the context you have is a PDF file splittet into chunks, answer according to the data from the file with the same language youve got in the question\n\n${context}\n\n${conversationHistory.join(
+
+      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${pdfText}\n\n${conversationHistory.join(
         "\n"
       )}\nAssistant:`;
-  
-      const chatModel = new ChatAnthropicMessages({
-        apiKey: apiKey,
+
+      const model = new ChatAnthropicMessages({
+        apiKey: apiKey, // Use API key from request body
         model: "claude-3-sonnet-20240229",
       });
-  
-      const response = await chatModel.invoke(inputText);
+
+      const response = await model.invoke(inputText);
       const content = response.text.trim();
       conversationHistory.push(`Assistant: ${content}`);
       sessionMemory[currentSessionId] = conversationHistory;
-  
+
       fs.unlink(filePath, (err) => {
         if (err) {
           console.error("Error deleting file:", err);
         }
       });
-  
+
       res.json({ sessionId: currentSessionId, answer: content });
     } catch (error) {
       console.error("Error generating response:", error);
@@ -226,7 +221,8 @@ app.post("/logout", async (req, res) => {
       });
       res.status(500).send("An error occurred while generating the response.");
     }
-  });
+  }
+);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
