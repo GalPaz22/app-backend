@@ -192,28 +192,15 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     await Promise.all(
       chunks.map(async (chunk, idx) => {
         const embedding = await embeddings.embedQuery(chunk);
-        await index.upsert({
-          vectors: [
-            {
-              id: `${currentSessionId}-${idx}`,
-              values: embedding,
-              metadata: { text: chunk }
-            },
-            {
-              id: `${currentSessionId}-${idx}-user`,
-              values: embedding,
-              metadata: { text: `User: ${question}` }
-            }
-
-
-
-          
-
-          ]
-        });
+        await index.upsert([
+          {
+            id: `${currentSessionId}-${idx}`,
+            values: embedding,
+            metadata: { text: chunk }
+          }
+        ]);
       })
     );
-
     const questionEmbedding = await embeddings.embedQuery(question);
     const queryResponse = await index.query({
       queries: [
