@@ -13,6 +13,7 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { PineconeClient } from "@pinecone-database/pinecone";
 
 
 const app = express();
