@@ -190,7 +190,7 @@ app.post("/logout", async (req, res) => {
   
     try {
       const loader = new PDFLoader(filePath, {
-        parsedItemSeparator: "\n",
+       
       });
       const docs = await loader.load();
       const pdfText = docs[0].pageContent;
