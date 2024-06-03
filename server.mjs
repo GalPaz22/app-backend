@@ -13,7 +13,7 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { PineconeClient } from "@pinecone-database/pinecone";
+import { Pinecone } from "@pinecone-database/pinecone";
 
 
 const app = express();
@@ -25,7 +25,7 @@ const client = new MongoClient(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
-const pinecone = new PineconeClient();
+const pinecone = new Pinecone();
 pinecone.init({
   apiKey: process.env.PINECONE_API_KEY, // Ensure you have your Pinecone API key in your environment variables
   environment: "us-east1-gcp" // Use the appropriate environment for your Pinecone instance
