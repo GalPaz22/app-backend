@@ -27,7 +27,7 @@ const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
 });
 
-const INDEX_NAME = "index";
+const INDEX_NAME = "my-pdf-index";
 const index = pinecone.Index(INDEX_NAME);
 
 client.connect()
