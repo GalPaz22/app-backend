@@ -221,7 +221,7 @@ app.post("/logout", async (req, res) => {
         .map((item) => item.index);
       const relevantChunks = topChunkIndices.map((index) => chunks[index]);
   
-      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document.\n\n${relevantChunks.join(
+      const inputText = ` Answer in the same language you got in your PDF context, in detail. you'll get graphs and charts sometimes, try to find them in the document. sometimes you add predicted user prompts to the answer by your own, dont ever do that. just give a clean answer according to the question and the context, which is embedded from the PDF.\n\n${relevantChunks.join(
         "\n"
       )}\n\n${conversationHistory.join("\n")}\nAssistant:`;
   
