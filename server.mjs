@@ -207,7 +207,9 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const queryResponse = await pineconeIndex.query({
       topK: 5,
       vector: await embeddings.embedQuery(question),
-      includeMetadata: true
+      includeMetadata: true,
+      namespace: currentSessionId,
+      
     });
 
     const relevantChunks = queryResponse.matches.map(match => match.metadata.text);
