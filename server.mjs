@@ -231,8 +231,8 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
         apiKey: apiKey,
         model: "claude-3-sonnet-20240229",
       });
-      await pineconeIndex.deleteAll();
-      
+    
+
       const response = await model.invoke(inputText);
       const content = response.text.trim();
       conversationHistory.push(`Assistant: ${content}`);
