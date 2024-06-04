@@ -195,7 +195,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const documents = chunks.map((chunk, idx) => new Document({
       pageContent: chunk,
-      metadata: { id: `${chunk}-${idx}` }
+      metadata: { id: `${currentSessionId}-${idx}` }
     }));
 
     await PineconeStore.fromDocuments(documents, embeddings, {
@@ -205,12 +205,16 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
 
     const queryResponse = await pineconeIndex.query({
-      topK: 3,
+      topK: 5,
       vector: await embeddings.embedQuery(question),
       includeMetadata: true
     });
 
     const relevantChunks = queryResponse.matches.map(match => match.metadata.text);
+    console.log(relevantChunks);
+
+
+    
 
     const inputText = `Answer in the same language you got in your PDF context, in detail. 
       You'll get graphs and charts sometimes, try to find them in the document.
