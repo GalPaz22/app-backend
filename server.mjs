@@ -171,7 +171,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
 
   try {
-    const loader = new PDFLoader(filePath);
+    const loader = new PDFLoader(filePath {splitPages: false});
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionID || uuidv4();
