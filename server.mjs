@@ -25,12 +25,8 @@ const client = new MongoClient(mongoUri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
-const pinecone = new Pinecone({
-  apiKey: process.env.PINECONE_API_KEY,
-});
 
-const INDEX_NAME = "index";
-const index = pinecone.Index(INDEX_NAME);
+
 
 client.connect()
   .then(() => {
@@ -191,8 +187,11 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
 
-    const pinecone = new Pinecone();
-    const pineconeIndex = pinecone.Index(process.env.PINECONE_INDEX);
+    const pinecone = new Pinecone({
+      apiKey: process.env.PINECONE_API_KEY,});
+
+
+    const pineconeIndex = pinecone.Index('index');
 
     const documents = chunks.map((chunk, idx) => new Document({
       pageContent: chunk,
