@@ -196,7 +196,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     });
     
     const pineconeIndex = pinecone.Index("index");
-    await pineconeIndex.deleteOne({ deleteAll: true, namespace: '' });
+    await pineconeIndex.deleteOne('')
     
     const documents = chunks.map((chunk, idx) => 
       new Document({
