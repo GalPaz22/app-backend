@@ -195,7 +195,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
         return {
           id: `${currentSessionId}-${idx}`,
           values: embedding,
-          metadata: { text: chunk },
         };
       })
     );
