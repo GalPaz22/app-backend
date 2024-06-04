@@ -208,16 +208,24 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
         maxConcurrency: 5,
       });
       
-      const queryResponse = await pineconeIndex.query({
-        topK: 5,
-        vector: await embeddings.embedQuery(question),
-        includeMetadata: true,
-      });
-      
-      const relevantChunks = queryResponse.matches.map(
-        (match) => match.metadata.text
-      );
-      console.log(relevantChunks);
+      const questionEmbedding = await embeddings.embedQuery(question);
+    
+    console.log('Question Embedding:', questionEmbedding);
+
+    const queryResponse = await pineconeIndex.query({
+      topK: 5,
+      vector: questionEmbedding,
+      includeMetadata: true,
+    });
+
+    console.log('Query Response:', queryResponse);
+
+    const relevantChunks = queryResponse.matches.map((match) => match.metadata.text);
+    console.log('Relevant Chunks:', relevantChunks);
+
+    if (!relevantChunks.length) {
+      throw new Error("No relevant chunks retrieved from Pinecone");
+    }
       
       const inputText = `Answer in the same language you got in your PDF context, in detail. 
       You'll get graphs and charts sometimes, try to find them in the document.
