@@ -195,11 +195,12 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
         return {
           id: `${currentSessionId}-${idx}`,
           values: embedding,
+          metadata: { text: chunk } // Add the chunk text as metadata
         };
       })
     );
-
-    await index.upsert([ vectors ]);
+    
+    await index.upsert(vectors);
 
     const questionEmbedding = await embeddings.embedQuery(question);
     const queryResponse = await index.query({
