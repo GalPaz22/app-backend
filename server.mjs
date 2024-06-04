@@ -278,7 +278,7 @@ app.post("/chat-response", async (req, res) => {
 
     const response = await openai.invoke(message);
 
-    const reply = response.choices[0].message.content;
+    const reply = response.text.trim();
     res.json({ reply });
   } catch (error) {
     console.error("Error during chat:", error);
