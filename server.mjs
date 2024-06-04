@@ -204,11 +204,9 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const questionEmbedding = await embeddings.embedQuery(question);
     const queryResponse = await index.query({
-      queries: [{
-        values: questionEmbedding,
-        topK: 3,
-        includeMetadata: true
-      }]
+      topK: 3,
+      vector: questionEmbedding,
+      includeMetadata: true
     });
 
     const relevantChunks = queryResponse.results[0].matches.map(match => match.metadata.text);
