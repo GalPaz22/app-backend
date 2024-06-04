@@ -15,6 +15,8 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
+import { Document } from "@langchain/core/documents";
+
 const app = express();
 const port = 4000;
 const sessionID = uuidv4();
