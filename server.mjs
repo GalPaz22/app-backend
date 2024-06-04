@@ -171,7 +171,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
 
   try {
-    const loader = new PDFLoader(filePath, {splitPages: true});
+    const loader = new PDFLoader(filePath, {splitPages: false});
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionID || uuidv4();
@@ -199,6 +199,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const documents = chunks.map((chunk, idx) => 
       new Document({
+        id: `${currentSessionId}-${idx}`,
         pageContent: chunk,
         metadata: { text: chunk },  // Ensure metadata is correctly assigned
       })
