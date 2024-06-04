@@ -167,14 +167,14 @@ app.post("/logout", async (req, res) => {
 });
 
 app.post("/generate-response", upload.single("file"), async (req, res) => {
-  const { question, sessionId, apiKey } = req.body;
+  const { question,  apiKey } = req.body;
   const filePath = req.file.path;
 
   try {
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
-    const currentSessionId = sessionId || uuidv4();
+    const currentSessionId = sessionID || uuidv4();
 
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
@@ -202,7 +202,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
-      namespace: currentSessionId,
     });
 
 
