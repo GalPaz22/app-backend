@@ -283,7 +283,7 @@ app.post("/chat-response", async (req, res) => {
 
     const response = await openai.stream(message);
 
-    const reply = response.text.trim();
+    const reply = response.content();
     res.json({ reply });
   } catch (error) {
     console.error("Error during chat:", error);
