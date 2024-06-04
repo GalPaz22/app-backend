@@ -274,7 +274,12 @@ app.post("/chat-response", async (req, res) => {
   try {
     const openai = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4o-2024-05-13"});
+      modelName: "gpt-4o-2024-05-13",
+    streaming: true,
+      verbose: true,
+      temperature: 0.9,
+      maxTokens: 1000,
+    });
 
     const response = await openai.invoke(message);
 
