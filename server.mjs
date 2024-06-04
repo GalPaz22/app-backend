@@ -14,7 +14,7 @@ import MongoStore from "connect-mongo";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Pinecone } from "@pinecone-database/pinecone";
-
+import { PineconeStore } from "@langchain/pinecone";
 const app = express();
 const port = 4000;
 const sessionID = uuidv4();
@@ -189,26 +189,27 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
 
-    const vectors = await Promise.all(
-      chunks.map(async (chunk, idx) => {
-        const embedding = await embeddings.embedQuery(chunk);
-        return {
-          id: `${currentSessionId}-${idx}`,
-          values: embedding,
-          metadata: { text: chunk } // Add the chunk text as metadata
-        };
-      })
-    );
-    
-    await index.upsert(vectors);
+    const pinecone = new Pinecone();
+    const pineconeIndex = pinecone.Index(process.env.PINECONE_INDEX);
 
-    const queryResponse = await index.query({
+    const documents = chunks.map((chunk, idx) => new Document({
+      pageContent: chunk,
+      metadata: { id: `${currentSessionId}-${idx}` }
+    }));
+
+    await PineconeStore.fromDocuments(documents, embeddings, {
+      pineconeIndex,
+      maxConcurrency: 5,
+    });
+
+
+    const queryResponse = await pineconeIndex.query({
       topK: 3,
-      vector: vectors[0].values, // Use the embedding of the first chunk as the query vector
+      vector: await embeddings.embedQuery(question),
       includeMetadata: true
     });
 
-    const relevantChunks = queryResponse.results[0].matches.map(match => match.metadata.text);
+    const relevantChunks = queryResponse.matches.map(match => match.metadata.text);
 
     const inputText = `Answer in the same language you got in your PDF context, in detail. 
       You'll get graphs and charts sometimes, try to find them in the document.
