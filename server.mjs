@@ -173,7 +173,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
 
   try {
-    const loader = new PDFLoader(filePath ) ;
+    const loader = new PDFLoader(filePath, {splitPages: false}  ) ;
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionId || uuidv4();
@@ -183,7 +183,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
-      chunkOverlap: 100,
+      chunkOverlap: 200,
     });
     const chunks = await textSplitter.splitText(pdfText);
     console.log(chunks);
