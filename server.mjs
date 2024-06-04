@@ -202,10 +202,9 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     
     await index.upsert(vectors);
 
-    const questionEmbedding = await embeddings.embedQuery(question);
     const queryResponse = await index.query({
       topK: 3,
-      vector: questionEmbedding,
+      vector: vectors[0].values, // Use the embedding of the first chunk as the query vector
       includeMetadata: true
     });
 
