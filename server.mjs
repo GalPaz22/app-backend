@@ -188,7 +188,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     
     const embeddings = new OpenAIEmbeddings({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      model: "text-embedding-3-large",
+      model: "text-embedding-3-small",
     });
     
     const pinecone = new Pinecone({
@@ -238,6 +238,8 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     Sometimes you add predicted user prompts to the answer by your own,
     don't ever do that. Just give a clean answer according to the question and the context,
     which is retrieved from the chunks .\n\n${relevantChunks.join(
+      "\n"
+    )}\n\n${conversationHistory.join(
       "\n"
     )}\n\nQuestion: ${question}\n\nAnswer:`;
 
