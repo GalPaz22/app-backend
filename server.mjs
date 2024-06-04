@@ -178,7 +178,8 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
-
+    await pineconeIndex.deleteOne({ deleteAll: true, namespace: '' });
+    
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
       chunkOverlap: 200,
@@ -207,7 +208,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     // Log documents before storing
     console.log('Documents to store:', documents);
-    await pineconeIndex.deleteOne({ deleteAll: true, namespace: '' });
     
 
     await PineconeStore.fromDocuments(documents, embeddings, {
