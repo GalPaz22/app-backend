@@ -196,7 +196,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     });
     
     const pineconeIndex = pinecone.Index("index");
-    await pineconeIndex.deleteOne('Default')
     
     const documents = chunks.map((chunk, idx) => 
       new Document({
@@ -252,11 +251,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     conversationHistory.push(`Assistant: ${content}`);
     sessionMemory[currentSessionId] = conversationHistory;
 
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error("Error deleting file:", err);
-      }
-    });
+    await pineconeIndex.deleteAll();
 
     res.json({ sessionId: currentSessionId, answer: content });
   } catch (error) {
