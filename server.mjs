@@ -167,13 +167,12 @@ app.post("/logout", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
 app.post("/generate-response", upload.single("file"), async (req, res) => {
   const { question, sessionId, apiKey } = req.body;
   const filePath = req.file.path;
 
   try {
-    const loader = new PDFLoader(filePath, {splitPages: false}  ) ;
+    const loader = new PDFLoader(filePath);
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionId || uuidv4();
@@ -183,42 +182,39 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
-      chunkOverlap: 200,
+      chunkOverlap: 100,
     });
     const chunks = await textSplitter.splitText(pdfText);
-    console.log(chunks);
 
     const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
 
-    await Promise.all(
+    // Upsert embeddings for all chunks
+    const vectors = await Promise.all(
       chunks.map(async (chunk, idx) => {
         const embedding = await embeddings.embedQuery(chunk);
-        await index.upsert([
-          {
-            id: `${currentSessionId}-${idx}`,
-            values: embedding,
-            metadata: { text: chunk }
-          }
-        ]);
+        return {
+          id: `${currentSessionId}-${idx}`,
+          values: embedding,
+          metadata: { text: chunk },
+        };
       })
     );
 
+    // Perform the actual upsert operation
+    await index.upsert({ vectors });
+
+    // Embed the question
     const questionEmbedding = await embeddings.embedQuery(question);
+
+    // Query Pinecone index
     const queryResponse = await index.query({
       vector: questionEmbedding,
       topK: 3,
-      includeMetadata: true
+      includeMetadata: true,
     });
-    
-    let relevantChunks = [];
-    if (queryResponse.matches && queryResponse.matches.length > 0) {
-      relevantChunks = queryResponse.matches.map(match => match.metadata.text);
-    }
 
-    if (relevantChunks.length === 0) {
-      relevantChunks = chunks;
-    }
-    
+    const relevantChunks = queryResponse.matches.map(match => match.metadata.text);
+
     const inputText = `Answer in the same language you got in your PDF context, in detail. 
       You'll get graphs and charts sometimes, try to find them in the document.
       Sometimes you add predicted user prompts to the answer by your own,
