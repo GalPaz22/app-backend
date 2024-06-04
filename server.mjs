@@ -26,9 +26,8 @@ const client = new MongoClient(mongoUri, {
   useUnifiedTopology: true,
 });
 
-
-
-client.connect()
+client
+  .connect()
   .then(() => {
     console.log("Connected to MongoDB");
   })
@@ -167,7 +166,7 @@ app.post("/logout", async (req, res) => {
 });
 
 app.post("/generate-response", upload.single("file"), async (req, res) => {
-  const { question,  apiKey } = req.body;
+  const { question, apiKey } = req.body;
   const filePath = req.file.path;
 
   try {
@@ -185,56 +184,61 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     });
     const chunks = await textSplitter.splitText(pdfText);
 
-    const embeddings = new OpenAIEmbeddings({ openAIApiKey: process.env.OPENAI_API_KEY });
+    const embeddings = new OpenAIEmbeddings({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      model: "text-embedding-ada-002",
+    });
 
     const pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY,});
-
-
-    const pineconeIndex = pinecone.Index('index');
-
-    const documents = chunks.map((chunk, idx) => new Document({
-      pageContent: chunk,
-      metadata: { id: `${currentSessionId}-${idx}` },
-      
-    }));
-
-    await PineconeStore.fromDocuments(documents, embeddings, {
-      pineconeIndex,
-      maxConcurrency: 5,
+      apiKey: process.env.PINECONE_API_KEY,
     });
 
+    const pineconeIndex = pinecone.Index("index");
 
-    const queryResponse = await pineconeIndex.query({
-      topK: 5,
-      vector: await embeddings.embedQuery(question),
-      includeMetadata: true,
+    const documents = chunks.map(
+      (chunk, idx) =>
+        new Document({
+          pageContent: chunk,
+          metadata: { id: `${currentSessionId}-${idx}` },
+        })
+      );
       
-    });
-
-    const relevantChunks = queryResponse.matches.map(match => match.metadata.text);
-    console.log(relevantChunks);
-
-
-    
-
-    const inputText = `Answer in the same language you got in your PDF context, in detail. 
+      await PineconeStore.fromDocuments(documents, embeddings, {
+        pineconeIndex,
+        maxConcurrency: 5,
+      });
+      
+      const queryResponse = await pineconeIndex.query({
+        topK: 5,
+        vector: await embeddings.embedQuery(question),
+        includeMetadata: true,
+      });
+      
+      const relevantChunks = queryResponse.matches.map(
+        (match) => match.metadata.text
+      );
+      console.log(relevantChunks);
+      
+      const inputText = `Answer in the same language you got in your PDF context, in detail. 
       You'll get graphs and charts sometimes, try to find them in the document.
       Sometimes you add predicted user prompts to the answer by your own,
       don't ever do that. Just give a clean answer according to the question and the context,
-      which is embedded from the PDF.\n\n${relevantChunks.join("\n")}\n\n${conversationHistory.join("\n")}\nAssistant:`;
-
-    const model = new ChatAnthropic({
-      apiKey: apiKey,
-      model: "claude-3-sonnet-20240229",
-    });
-
-    const response = await model.invoke(inputText);
-    const content = response.text.trim();
-    conversationHistory.push(`Assistant: ${content}`);
-    sessionMemory[currentSessionId] = conversationHistory;
-
-    fs.unlink(filePath, (err) => {
+      which is embedded from the PDF.\n\n${relevantChunks.join(
+        "\n"
+      )}\n\n${conversationHistory.join("\n")}\nAssistant:`;
+      
+      const model = new ChatAnthropic({
+        apiKey: apiKey,
+        model: "claude-3-sonnet-20240229",
+      });
+      await pineconeIndex.deleteAll();
+      
+      const response = await model.invoke(inputText);
+      const content = response.text.trim();
+      conversationHistory.push(`Assistant: ${content}`);
+      sessionMemory[currentSessionId] = conversationHistory;
+      
+      fs.unlink(filePath, (err) => {
       if (err) {
         console.error("Error deleting file:", err);
       }
