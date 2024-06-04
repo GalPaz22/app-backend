@@ -199,7 +199,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       })
     );
 
-    await index.upsert([{ vectors }]);
+    await index.upsert([ vectors ]);
 
     const questionEmbedding = await embeddings.embedQuery(question);
     const queryResponse = await index.query({
