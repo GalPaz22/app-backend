@@ -188,7 +188,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const embeddings = new OpenAIEmbeddings({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      model: "text-embedding-ada-002",
+      model: "text-embedding-3-large",
     });
 
     const pinecone = new Pinecone({
