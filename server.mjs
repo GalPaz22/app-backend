@@ -170,7 +170,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
 
   try {
-    const loader = new PDFLoader(filePath, { splitPages: false });
+    const loader = new PDFLoader(filePath);
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionID || uuidv4();
@@ -179,7 +179,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     conversationHistory.push(`User: ${question}`);
 
     const textSplitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 1000,
+      chunkSize: 500,
       chunkOverlap: 200,
     });
     const chunks = await textSplitter.splitText(pdfText);
