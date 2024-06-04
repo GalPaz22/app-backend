@@ -195,12 +195,14 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const documents = chunks.map((chunk, idx) => new Document({
       pageContent: chunk,
-      metadata: { id: `${currentSessionId}-${idx}` }
+      metadata: { id: `${currentSessionId}-${idx}` },
+      
     }));
 
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
+      namespace: currentSessionId,
     });
 
 
@@ -208,7 +210,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       topK: 5,
       vector: await embeddings.embedQuery(question),
       includeMetadata: true,
-      namespace: currentSessionId,
       
     });
 
