@@ -196,21 +196,22 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const pineconeIndex = pinecone.Index("index");
 
-    const documents = chunks.map(
-      (chunk, idx) =>
-        new Document({
-          pageContent: chunk,
-          metadata: { text: chunks[idx] },
-        })
-      );
-      
-      await PineconeStore.fromDocuments(documents, embeddings, {
-        pineconeIndex,
-        maxConcurrency: 5,
-      });
-      
-      const questionEmbedding = await embeddings.embedQuery(question);
-    
+    const documents = chunks.map((chunk, idx) => 
+      new Document({
+        pageContent: chunk,
+        metadata: { text: chunk },  // Ensure metadata is correctly assigned
+      })
+    );
+
+    // Log documents before storing
+    console.log('Documents to store:', documents);
+
+    await PineconeStore.fromDocuments(documents, embeddings, {
+      pineconeIndex,
+      maxConcurrency: 5,
+    });
+
+    const questionEmbedding = await embeddings.embedQuery(question);
     console.log('Question Embedding:', questionEmbedding);
 
     const queryResponse = await pineconeIndex.query({
@@ -227,27 +228,26 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     if (!relevantChunks.length) {
       throw new Error("No relevant chunks retrieved from Pinecone");
     }
-      
-      const inputText = `Answer in the same language you got in your PDF context, in detail. 
-      You'll get graphs and charts sometimes, try to find them in the document.
-      Sometimes you add predicted user prompts to the answer by your own,
-      don't ever do that. Just give a clean answer according to the question and the context,
-      which is retrieved from the chunks .\n\n${relevantChunks.join(
-        "\n"
-      )}\n\nQuestion: ${question}\n\nAnswer:`;
-      
-      const model = new ChatAnthropic({
-        apiKey: apiKey,
-        model: "claude-3-sonnet-20240229",
-      });
-    
 
-      const response = await model.invoke(inputText);
-      const content = response.text.trim();
-      conversationHistory.push(`Assistant: ${content}`);
-      sessionMemory[currentSessionId] = conversationHistory;
-      
-      fs.unlink(filePath, (err) => {
+    const inputText = `Answer in the same language you got in your PDF context, in detail. 
+    You'll get graphs and charts sometimes, try to find them in the document.
+    Sometimes you add predicted user prompts to the answer by your own,
+    don't ever do that. Just give a clean answer according to the question and the context,
+    which is retrieved from the chunks .\n\n${relevantChunks.join(
+      "\n"
+    )}\n\nQuestion: ${question}\n\nAnswer:`;
+
+    const model = new ChatAnthropic({
+      apiKey: apiKey,
+      model: "claude-3-sonnet-20240229",
+    });
+
+    const response = await model.invoke(inputText);
+    const content = response.text.trim();
+    conversationHistory.push(`Assistant: ${content}`);
+    sessionMemory[currentSessionId] = conversationHistory;
+
+    fs.unlink(filePath, (err) => {
       if (err) {
         console.error("Error deleting file:", err);
       }
