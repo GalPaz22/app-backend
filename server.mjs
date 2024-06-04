@@ -16,6 +16,7 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
+import { match } from "assert";
 
 const app = express();
 const port = 4000;
@@ -183,7 +184,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       chunkOverlap: 200,
     });
     const chunks = await textSplitter.splitText(pdfText);
-    console.log('Chunks:', chunks);
+    
 
     const embeddings = new OpenAIEmbeddings({
       openAIApiKey: process.env.OPENAI_API_KEY,
@@ -204,7 +205,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     );
 
     // Log documents before storing
-    console.log('Documents to store:', documents.metadata.text);
+    console.log('Documents to store:', documents);
 
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
@@ -223,6 +224,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     console.log('Query Response:', queryResponse);
 
     const relevantChunks = queryResponse.matches.map((match) => match.metadata.text);
+    console.log(match);
     console.log('Relevant Chunks:', relevantChunks);
 
     if (!relevantChunks.length) {
