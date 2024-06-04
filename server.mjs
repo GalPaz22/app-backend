@@ -204,7 +204,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     );
 
     // Log documents before storing
-    console.log('Documents to store:', documents);
+    console.log('Documents to store:', documents.metadata.text);
 
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
@@ -215,7 +215,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     console.log('Question Embedding:', questionEmbedding);
 
     const queryResponse = await pineconeIndex.query({
-      topK: 10,
+      topK: 5,
       vector: questionEmbedding,
       includeMetadata: true,
     });
