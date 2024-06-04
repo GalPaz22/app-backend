@@ -195,7 +195,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const documents = chunks.map((chunk, idx) => new Document({
       pageContent: chunk,
-      metadata: { id: `${currentSessionId}-${idx}` }
+      metadata: { id: `${chunk}-${idx}` }
     }));
 
     await PineconeStore.fromDocuments(documents, embeddings, {
