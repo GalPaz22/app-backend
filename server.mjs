@@ -17,6 +17,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { match } from "assert";
+import { ChatOpenAI } from "@langchain/openai";
 
 const app = express();
 const port = 4000;
@@ -264,6 +265,24 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       }
     });
     res.status(500).send("An error occurred while generating the response.");
+  }
+});
+app.post("/chat-response", async (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).send("Message is required");
+
+  try {
+    const openai = new ChatOpenAI({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: "gpt-3.5-turbo",});
+
+    const response = await openai.invoke(message);
+
+    const reply = response.choices[0].message.content;
+    res.json({ reply });
+  } catch (error) {
+    console.error("Error during chat:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
