@@ -207,6 +207,8 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     // Log documents before storing
     console.log('Documents to store:', documents);
+    await pineconeIndex.deleteMany({ namespace: currentSessionId });
+    
 
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
