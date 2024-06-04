@@ -281,10 +281,14 @@ app.post("/chat-response", async (req, res) => {
    
     });
 
-    const response = await openai.stream(message);
+    const stream = await openai.stream(message);
 
-    const reply = response.content();
-    res.json({ reply });
+    const chunks = [];
+    for await (const chunk of stream) {
+      chunks.push(chunk);
+      
+    }
+    res.json({ answer: chunks.join("") });
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
