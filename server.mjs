@@ -213,7 +213,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     console.log('Question Embedding:', questionEmbedding);
 
     const queryResponse = await pineconeIndex.query({
-      topK: 5,
+      topK: 10,
       vector: questionEmbedding,
       includeMetadata: true,
     });
