@@ -183,6 +183,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       chunkOverlap: 200,
     });
     const chunks = await textSplitter.splitText(pdfText);
+    console.log('Chunks:', chunks);
 
     const embeddings = new OpenAIEmbeddings({
       openAIApiKey: process.env.OPENAI_API_KEY,
@@ -231,9 +232,9 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       You'll get graphs and charts sometimes, try to find them in the document.
       Sometimes you add predicted user prompts to the answer by your own,
       don't ever do that. Just give a clean answer according to the question and the context,
-      which is embedded from the PDF.\n\n${relevantChunks.join(
+      which is retrieved from the chunks .\n\n${relevantChunks.join(
         "\n"
-      )}\n\n${conversationHistory.join("\n")}\nAssistant:`;
+      )}\n\nQuestion: ${question}\n\nAnswer:`;
       
       const model = new ChatAnthropic({
         apiKey: apiKey,
