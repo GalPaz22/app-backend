@@ -200,7 +200,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       (chunk, idx) =>
         new Document({
           pageContent: chunk,
-          metadata: { id: `${currentSessionId}-${idx}` },
+          metadata: { text: chunks[idx] },
         })
       );
       
