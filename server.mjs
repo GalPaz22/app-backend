@@ -278,10 +278,10 @@ app.post("/chat-response", async (req, res) => {
     streaming: true,
       verbose: true,
       temperature: 0.9,
-      maxTokens: 1000,
+   
     });
 
-    const response = await openai.invoke(message);
+    const response = await openai.stream(message);
 
     const reply = response.text.trim();
     res.json({ reply });
