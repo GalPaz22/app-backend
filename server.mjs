@@ -178,7 +178,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
-    await pineconeIndex.deleteOne({ deleteAll: true, namespace: '' });
     
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
@@ -186,18 +185,19 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     });
     const chunks = await textSplitter.splitText(pdfText);
     
-
+    
     const embeddings = new OpenAIEmbeddings({
       openAIApiKey: process.env.OPENAI_API_KEY,
       model: "text-embedding-3-large",
     });
-
+    
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
     });
-
+    
     const pineconeIndex = pinecone.Index("index");
-
+    await pineconeIndex.deleteOne({ deleteAll: true, namespace: '' });
+    
     const documents = chunks.map((chunk, idx) => 
       new Document({
         id: `${currentSessionId}-${idx}`,
