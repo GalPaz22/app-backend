@@ -289,7 +289,7 @@ app.post("/chat-response", async (req, res) => {
     });
 
     for await (const chunk of stream) {
-      res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
+      res.write(`data: ${({ content: chunk.content })}\n\n`);
     }
 
     res.write(`data: [DONE]\n\n`);
