@@ -288,7 +288,7 @@ app.post("/chat-response", async (req, res) => {
       chunks.push(chunk);
       console.log(`${chunks}|`);
 
-      res.write(`${chunks}`);
+      res.write(`${chunk.content}`);
     }
 
     
