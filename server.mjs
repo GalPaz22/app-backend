@@ -267,43 +267,42 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     res.status(500).send("An error occurred while generating the response.");
   }
 });
+
+
+
 app.post("/chat-response", async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).send("Message is required");
 
   try {
-    app.get('/chat-response', async (req, res) => {
-      try {
-        const message = req.query.message;
-    
-        const openai = new ChatOpenAI({
-          openAIApiKey: process.env.OPENAI_API_KEY,
-          modelName: "gpt-4o-2024-05-13",
-          streaming: true,
-          verbose: true,
-          temperature: 0.9,
-        });
-    
-        const stream = await openai.stream(message);
-
-        for await (const chunk of stream) {
-          res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
-          res.flush();
-        }
-    
-        res.write(`data: [DONE]\n\n`);
-        res.end();
-      } catch (error) {
-        console.error("Error fetching response:", error);
-        res.status(500).send("An error occurred while fetching the response.");
-      }
+    const openai = new ChatOpenAI({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: "gpt-4o-2024-05-13",
+      streaming: true,
+      verbose: true,
+      temperature: 0.9,
     });
+
+    const stream = await openai.stream(message);
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    for await (const chunk of stream) {
+      res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
+      res.flush();
+    }
+
+    res.write(`data: [DONE]\n\n`);
+    res.end();
   } catch (error) {
-    console.error("Error generating response:", error); 
+    console.error("Error fetching response:", error);
+    res.status(500).send("An error occurred while fetching the response.");
   }
 });
-     
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-}); 
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
