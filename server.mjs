@@ -274,25 +274,29 @@ app.post("/chat-response", async (req, res) => {
   try {
     const openai = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4o-2024-05-13",
-    streaming: true,
+      modelName: "gpt-4-2024-05-13", // Ensure this is the correct model name
+      streaming: true,
       verbose: true,
       temperature: 0.9,
-   
     });
 
     const stream = await openai.stream(message);
 
-    const chunks = [];
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive"
+    });
+
     for await (const chunk of stream) {
-      chunks.push(chunk);
-      console.log(`${chunks}|`);
-    
+      res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
     }
-    res.send(chunks.text);
+
+    res.write(`data: [DONE]\n\n`);
+    res.end();
   } catch (error) {
-    console.error("Error during chat:", error);
-    res.status(500).send("Internal Server Error");
+    console.error("Error fetching response:", error);
+    res.status(500).send("An error occurred while fetching the response.");
   }
 });
 
