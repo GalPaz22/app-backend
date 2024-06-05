@@ -274,7 +274,7 @@ app.post("/chat-response", async (req, res) => {
   try {
     const openai = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4-2024-05-13", // Ensure this is the correct model name
+      modelName: "gpt-4o-2024-05-13", // Ensure this is the correct model name
       streaming: true,
       verbose: true,
       temperature: 0.9,
