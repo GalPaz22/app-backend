@@ -288,10 +288,12 @@ app.post("/chat-response", async (req, res) => {
       chunks.push(chunk);
       console.log(`${chunks}|`);
 
-      res.write(chunk.content);
-
+      if (chunk.choices[0].delta.content) {   
+        res.write(chunk.choices[0].delta.content);
+      }
     }
 
+    res.write("\n\n");
     res.end();
   } catch (error) {
     console.error("Error during chat:", error);
