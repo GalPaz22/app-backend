@@ -283,14 +283,12 @@ app.post("/chat-response", async (req, res) => {
 
     const stream = await openai.stream(message);
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-
+    const chunks = [];
     for await (const chunk of stream) {
-      res.write(chunk.text);
+      chunks.push(chunk);
+      console.log(`${chunk.text}|`);
     }
-    res.end();
+    res.send(chunks.join(""));
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
