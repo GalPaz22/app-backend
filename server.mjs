@@ -285,13 +285,18 @@ app.post("/chat-response", async (req, res) => {
 
     const stream = await openai.stream(message);
 
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",      
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive"
+    });
+    
+
+
 
     for await (const chunk of stream) {
       res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
-      res.flush();
+
     }
 
     res.write(`data: [DONE]\n\n`);
@@ -302,7 +307,6 @@ app.post("/chat-response", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });
