@@ -272,34 +272,43 @@ app.post("/chat-response", async (req, res) => {
   if (!message) return res.status(400).send("Message is required");
 
   try {
-    const openai = new ChatOpenAI({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4o-2024-05-13",
-      streaming: true,
-      verbose: true,
-      temperature: 0.9,
+    app.get('/chat-response', async (req, res) => {
+      try {
+        const message = req.query.message;
+    
+        const openai = new ChatOpenAI({
+          openAIApiKey: process.env.OPENAI_API_KEY,
+          modelName: "gpt-4o-2024-05-13",
+          streaming: true,
+          verbose: true,
+          temperature: 0.9,
+        });
+    
+        const stream = await openai.stream(message);
+    
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        });
+    
+        for await (const chunk of stream) {
+          res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
+          res.flush();
+        }
+    
+        res.write(`data: [DONE]\n\n`);
+        res.end();
+      } catch (error) {
+        console.error("Error fetching response:", error);
+        res.status(500).send("An error occurred while fetching the response.");
+      }
     });
-  
-    const stream = await openai.stream(message);
-  
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    });
-  
-    for await (const chunk of stream) {
-      res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
-      res.flush(); // Flush the response to send the data immediately
-    }
-  
-    res.write(`data: [DONE]\n\n`);
-    res.end();
   } catch (error) {
-    console.error("Error during chat:", error);
-    res.status(500).send("Internal Server Error");
+    console.error("Error generating response:", error); 
   }
 });
+     
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
