@@ -271,30 +271,33 @@ app.post("/chat-response", async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).send("Message is required");
 
-  try {
-    const openai = new ChatOpenAI({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4o-2024-05-13",
+  try { const openai = new ChatOpenAI({
+    openAIApiKey: process.env.OPENAI_API_KEY,
+    modelName: "gpt-4o-2024-05-13",
     streaming: true,
-      verbose: true,
-      temperature: 0.9,
-   
-    });
+    verbose: true,
+    temperature: 0.9,
+  });
 
-    const stream = await openai.stream(message);
+  const stream = await openai.stream(message);
 
-    const chunks = [];
-    for await (const chunk of stream) {
-      chunks.push(chunk);
-      console.log(`${chunk.text}|`);
-    }
-    res.send(chunks.text);
-  } catch (error) {
-    console.error("Error during chat:", error);
-    res.status(500).send("Internal Server Error");
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  });
+
+  for await (const chunk of stream) {
+    res.write(`data: ${JSON.stringify({ content: chunk.content })}\n\n`);
   }
-});
+
+  res.write(`data: [DONE]\n\n`);
+  res.end();
+} catch (error) {
+  console.error("Error during chat:", error);
+  res.status(500).send("Internal Server Error");
+}});
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
-});
+}); 
