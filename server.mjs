@@ -287,13 +287,17 @@ app.post("/chat-response", async (req, res) => {
     for await (const chunk of stream) {
       chunks.push(chunk);
       console.log(`${chunks}|`);
-
-      if (chunk.choices[0].delta.content) {   
-        res.write(chunk.choices[0].delta.content);
-      }
     }
 
-    res.write("\n\n");
+    const content = chunks
+      .map((chunk) => chunk.text)
+      .join("")
+      .trim();  
+
+    res.json({ answer: content });
+
+    
+
     res.end();
   } catch (error) {
     console.error("Error during chat:", error);
