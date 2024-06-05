@@ -287,14 +287,9 @@ app.post("/chat-response", async (req, res) => {
     for await (const chunk of stream) {
       chunks.push(chunk);
       console.log(`${chunks}|`);
+
+      res.write(`${chunks}`);
     }
-
-    const content = chunks
-      .map((chunk) => chunk.text)
-      .join("")
-      .trim();  
-
-    res.json({ answer: content });
 
     
 
