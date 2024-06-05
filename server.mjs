@@ -287,8 +287,12 @@ app.post("/chat-response", async (req, res) => {
     for await (const chunk of stream) {
       chunks.push(chunk);
       console.log(`${chunks}|`);
+
+      res.write(chunk);
+
     }
-    res.json({ answer: chunks.join("") });
+
+    res.end();
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
