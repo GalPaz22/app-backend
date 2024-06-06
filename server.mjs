@@ -288,7 +288,8 @@ app.post("/chat-response", async (req, res) => {
       chunks.push(chunk);
       console.log(`${chunk.text}|`);
     }
-    res.send(chunk.text);
+    const content = chunks.map(chunk => chunk.text);
+    res.send(content.join(''));
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
