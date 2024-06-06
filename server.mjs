@@ -287,7 +287,7 @@ app.post("/chat-response", async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
 
     for await (const chunk of stream) {
-      res.write(`data: ${chunk.text}\n\n`);
+      res.write(`data: ${chunk.text.trim()}\n\n`);
     }
     res.write('data: [DONE]\n\n');
     res.end();
