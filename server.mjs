@@ -286,10 +286,9 @@ app.post("/chat-response", async (req, res) => {
     const chunks = [];
     for await (const chunk of stream) {
       chunks.push(chunk);
-      console.log(`${chunks.text}|`);
-    
+      console.log(`${chunk.text}|`);
     }
-    res.send(chunks.text);
+    res.send(chunk.text);
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
