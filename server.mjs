@@ -275,26 +275,29 @@ app.post("/chat-response", async (req, res) => {
     const openai = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
       modelName: "gpt-4o-2024-05-13",
-    streaming: true,
+      streaming: true,
       verbose: true,
       temperature: 0.9,
-   
     });
 
     const stream = await openai.stream(message);
 
-    const chunks = [];
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
     for await (const chunk of stream) {
-      chunks.push(chunk);
-      console.log(`${chunk.text}|`);
+      res.write(`data: ${chunk.text}\n\n`);
     }
-    const content = chunks.map(chunk => chunk.text);
-    res.send(content.join(''));
+    res.write('data: [DONE]\n\n');
+    res.end();
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
   }
 });
+
+
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
