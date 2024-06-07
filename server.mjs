@@ -274,7 +274,7 @@ app.post("/chat-response", async (req, res) => {
   try {
     const openai = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-3.5-turbo",
+      modelName: "gpt-3.5",
       streaming: true,
       verbose: true,
       temperature: 0.9,
