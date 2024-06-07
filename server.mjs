@@ -284,7 +284,7 @@ app.post("/chat-response", async (req, res) => {
 
 
     console.log(response);
-    res.json({ response: response.text.trim() });
+    res.send(response);
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
