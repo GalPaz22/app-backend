@@ -281,10 +281,13 @@ app.post("/chat-response", async (req, res) => {
     });
 
     const response = await openai.invoke(message);
+    for await (const token of response) {
+      console.log(token.text);
+    res.send(token.text);
+    }
 
 
-    console.log(response);
-    res.send(response);
+   
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
