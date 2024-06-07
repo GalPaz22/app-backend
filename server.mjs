@@ -280,7 +280,7 @@ app.post("/chat-response", async (req, res) => {
       temperature: 0.9,
     });
 
-    const stream = await openai.stream(message);
+    const stream = await openai.invoke(message);
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
