@@ -281,6 +281,7 @@ app.post("/chat-response", async (req, res) => {
     });
 
     const stream = await openai.stream(message);
+    console.log(stream);
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
