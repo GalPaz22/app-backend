@@ -281,13 +281,14 @@ app.post("/chat-response", async (req, res) => {
     });
 
     const stream = await openai.stream(message);
-    console.log(stream);
+   
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
     for await (const chunk of stream) {
+      console.log(chunk.text);
       res.write(`data: ${chunk.text}\n\n`);
     }
     res.write('data: [DONE]\n\n');
