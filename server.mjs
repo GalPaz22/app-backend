@@ -290,7 +290,7 @@ app.post("/chat-response", async (req, res) => {
     for await (const chunk of stream) {
       res.write(`data: ${chunk.text}\n\n`);
     }
-    res.write("data: [DONE]\n\n");
+    
     res.end();
   } catch (error) {
     console.error("Error during chat:", error);
