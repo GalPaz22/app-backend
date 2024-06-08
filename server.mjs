@@ -300,7 +300,7 @@ app.post("/chat-response", async (req, res) => {
     const reformatter = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
       modelName: "gpt-3.5-turbo-0125",
-      streaming: false,
+      streaming: true,
       verbose: true,
       temperature: 0.9,
     });
