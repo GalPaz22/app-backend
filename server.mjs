@@ -274,22 +274,20 @@ app.post("/chat-response", async (req, res) => {
   try {
     const openai = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-3.5-turbo-0125",
+      modelName: "gpt-4o-2024-05-13",
       streaming: true,
       verbose: true,
       temperature: 0.9,
     });
 
     const stream = await openai.stream(message);
-   
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
     for await (const chunk of stream) {
-      console.log(chunk.text);
-      res.write(`data: ${chunk.text}\n\n`);
+      res.write(`data: ${chunk.text.trim()}\n\n`);
     }
     res.write('data: [DONE]\n\n');
     res.end();
