@@ -305,14 +305,24 @@ app.post("/chat-response", async (req, res) => {
       temperature: 0.9,
     });
 
-    const reformattedResponse = await reformatter.invoke(chunks, {
+    const reformattedResponse = await reformatter.stream(chunks, {
       instructions: "Please reformat this response to ensure Hebrew words are not split incorrectly.",
     });
+    let newChunks = "";
+     for await (const newChunks of reformattedResponse) {
+      console.log(newChunks.text);
+      newChunks += newChunks.text;
+      res.write(newChunks.text);
+
+    }
+
+    // Process the reformatted chunks to ensure proper Hebrew formatting
+
+
+    console.log("Reformatted Response:", reformattedResponse.text);
 
     // Stream the reformatted response back to the client
-    res.write(`data: ${reformattedResponse.text}\n\n`);
-    res.write("data: [DONE]\n\n");
-    res.end();
+   
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
