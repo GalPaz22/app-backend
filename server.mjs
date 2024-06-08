@@ -281,16 +281,10 @@ app.post("/chat-response", async (req, res) => {
       temperature: 0.9,
     });
     const input =
-      "you are a chatbot, you will get user prompts in english and hebrew, and you will stream the answers to client side using string method. pay attention to stream the hebrew words properly, without splitting them- its really really important" + message;
+      "you are a chatbot, you will get user prompts in english and hebrew, and you will stream the answers to client side using string method. pay attention to stream the hebrew words properly, without splitting them- its really really important" +
+      message;
 
-    const stream = await openai.stream(
-      new HumanChatMessage(input),
-      {
-        onProgress: (partialResponse) => {
-          console.log(partialResponse);
-        },
-      }
-    );
+    const stream = await openai.stream(input);
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
