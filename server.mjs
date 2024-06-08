@@ -305,9 +305,7 @@ app.post("/chat-response", async (req, res) => {
       temperature: 0.9,
     });
 
-    const reformattedResponse = await reformatter.stream(chunks, {
-      instructions: "Please reformat this response to ensure Hebrew words are not split incorrectly.",
-    });
+    const reformattedResponse = await reformatter.stream("Please reformat this response to ensure Hebrew words are not split incorrectly."+ chunks);
     let newChunks = "";
      for await (const newChunk of reformattedResponse) {
       console.log(newChunk.text);
