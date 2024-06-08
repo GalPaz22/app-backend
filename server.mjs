@@ -305,7 +305,7 @@ app.post("/chat-response", async (req, res) => {
       temperature: 0.9,
     });
 
-    const reformattedResponse = await reformatter.chat(chunks, {
+    const reformattedResponse = await reformatter.invoke(chunks, {
       instructions: "Please reformat this response to ensure Hebrew words are not split incorrectly.",
     });
 
