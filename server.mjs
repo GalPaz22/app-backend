@@ -280,8 +280,9 @@ app.post("/chat-response", async (req, res) => {
       verbose: true,
       temperature: 0.9,
     });
+
     const input =
-      "you are a chatbot, you will get user prompts in english and hebrew, and you will stream the answers to client side using string method. pay attention to stream the hebrew words properly, without splitting the words" + message;
+      "you are a chatbot, you will get user prompts in english and hebrew, and you will stream the answers to client side using string method. pay attention to stream the hebrew words properly, without splitting the words. " + message;
 
     const stream = await openai.stream(input);
 
@@ -289,10 +290,27 @@ app.post("/chat-response", async (req, res) => {
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
+    let chunks = "";
     for await (const chunk of stream) {
       console.log(chunk.text);
-      res.write(`data: ${chunk.text}\n\n`);
+      chunks += chunk.text;
     }
+
+    // Process the collected chunks to ensure proper Hebrew formatting
+    const reformatter = new ChatOpenAI({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: "gpt-3.5-turbo-0125",
+      streaming: false,
+      verbose: true,
+      temperature: 0.9,
+    });
+
+    const reformattedResponse = await reformatter.chat(chunks, {
+      instructions: "Please reformat this response to ensure Hebrew words are not split incorrectly.",
+    });
+
+    // Stream the reformatted response back to the client
+    res.write(`data: ${reformattedResponse.text}\n\n`);
     res.write("data: [DONE]\n\n");
     res.end();
   } catch (error) {
