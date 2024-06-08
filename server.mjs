@@ -274,48 +274,31 @@ app.post("/chat-response", async (req, res) => {
   try {
     const openai = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-3.5-turbo-0125",
+      modelName: "gpt-3.5",
       streaming: true,
       verbose: true,
       temperature: 0.9,
     });
 
     const stream = await openai.stream(message);
+   
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-
-    let buffer = "";
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
     for await (const chunk of stream) {
-      const text = chunk.text;
-      console.log(text);
-
-      buffer += text;
-
-      // Reformat the Hebrew text to ensure words are not split incorrectly
-      const reformattedText = buffer
-        .replace(/\s+/g, " ")
-        .replace(/data:\s*/g, "")
-        .replace(/\[DONE\]/g, "")
-        .replace(/(ו)([^ ]{2})/g, "$1 $2")
-        .replace(/(כ)([^ ]{2})/g, "$1 $2")
-        .replace(/(ב)([^ ]{2})/g, "$1 $2");
-
-      buffer = "";
-
-      // Stream the reformatted chunk to the client
-      res.write(`data: ${reformattedText}\n\n`);
+      console.log(chunk.text);
+      res.write(`data: ${chunk.text}\n\n`);
     }
-
-    res.write("data: [DONE]\n\n");
+    res.write('data: [DONE]\n\n');
     res.end();
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
   }
 });
+
 
 
 app.listen(port, () => {
