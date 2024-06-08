@@ -309,10 +309,10 @@ app.post("/chat-response", async (req, res) => {
       instructions: "Please reformat this response to ensure Hebrew words are not split incorrectly.",
     });
     let newChunks = "";
-     for await (const newChunks of reformattedResponse) {
-      console.log(newChunks.text);
-      newChunks += newChunks.text;
-      res.write(newChunks.text);
+     for await (const newChunk of reformattedResponse) {
+      console.log(newChunk.text);
+      newChunks += newChunk.text;
+      res.write(newChunk.text);
 
     }
 
