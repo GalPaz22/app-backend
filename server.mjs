@@ -280,41 +280,28 @@ app.post("/chat-response", async (req, res) => {
       verbose: true,
       temperature: 0.9,
     });
-
     const input =
-      "you are a chatbot, you will get user prompts in english and hebrew, and you will stream the answers to client side using string method. pay attention to stream the hebrew words properly, without splitting the words. " + message;
+      "you are a chatbot, you will get user prompts in english and hebrew, and you will stream the answers to client side using string method. pay attention to stream the hebrew words properly, without splitting them- its really really important" + message;
 
-    const stream = await openai.stream(input);
+    const stream = await openai.stream(
+      new HumanChatMessage(input),
+      {
+        onProgress: (partialResponse) => {
+          console.log(partialResponse);
+        },
+      }
+    );
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    let chunks = "";
     for await (const chunk of stream) {
       console.log(chunk.text);
-      chunks += chunk.text;
+      res.write(`data: ${chunk.text}\n\n`);
     }
-
-    // Process the collected chunks to ensure proper Hebrew formatting
-    const reformatter = new ChatOpenAI({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-3.5-turbo-0125",
-      streaming: true,
-      verbose: true,
-      temperature: 0.9,
-    });
-
-    const reformattedResponse = await reformatter.stream(chunks, {
-      instructions: "you will get chunks from another llm, sometime in hebrew. when you get hebrew chunks, pay attention if they are properly formatted- not splittet in between. if they are not properly formatted, reformat them properly. " 
-    });
-
-    console.log("Reformatted Response:", reformattedResponse.text);
-
-    res.send(reformattedResponse.text);
-
-    // Stream the reformatted response back to the client
-   
+    res.write("data: [DONE]\n\n");
+    res.end();
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
