@@ -272,51 +272,50 @@ app.post("/chat-response", async (req, res) => {
   if (!message) return res.status(400).send("Message is required");
 
   try {
-    const input = "your prompt here: " + message;
-
-    const response = await openai.createCompletion({
-      model: "gpt-3.5-turbo-0125",
-      prompt: input,
-      max_tokens: 150,
+    const openai = new ChatOpenAI({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: "gpt-3.5-turbo-0125",
+      streaming: true,
+      verbose: true,
       temperature: 0.9,
-      stream: true,  // Enable streaming
-    }, { responseType: 'stream' });
+    });
+
+    const stream = await openai.stream(message);
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    let chunks = "";
-    response.data.on('data', chunk => {
-      const data = chunk.toString();
-      const lines = data.split('\n').filter(line => line.trim() !== '');
-      for (const line of lines) {
-        const message = line.replace(/^data: /, '');
-        if (message === '[DONE]') {
-          return;
-        }
-        try {
-          const parsed = JSON.parse(message);
-          chunks += parsed.choices[0].text;
-          res.write(`data: ${parsed.choices[0].text}\n\n`);  // Stream chunks to client
-        } catch (error) {
-          console.error('Could not JSON parse stream message', message, error);
-        }
-      }
-    });
+    let buffer = "";
 
-    response.data.on('end', async () => {
-      // Signal end of streaming
-      res.write("data: [DONE]\n\n");
-      res.end();
-    });
+    for await (const chunk of stream) {
+      const text = chunk.text;
+      console.log(text);
 
+      buffer += text;
+
+      // Reformat the Hebrew text to ensure words are not split incorrectly
+      const reformattedText = buffer
+        .replace(/\s+/g, " ")
+        .replace(/data:\s*/g, "")
+        .replace(/\[DONE\]/g, "")
+        .replace(/(ו)([^ ]{2})/g, "$1 $2")
+        .replace(/(כ)([^ ]{2})/g, "$1 $2")
+        .replace(/(ב)([^ ]{2})/g, "$1 $2");
+
+      buffer = "";
+
+      // Stream the reformatted chunk to the client
+      res.write(`data: ${reformattedText}\n\n`);
+    }
+
+    res.write("data: [DONE]\n\n");
+    res.end();
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
   }
 });
-
 
 
 app.listen(port, () => {
