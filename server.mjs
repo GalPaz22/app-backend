@@ -306,7 +306,7 @@ app.post("/chat-response", async (req, res) => {
     });
 
     const reformattedResponse = await reformatter.stream(chunks, {
-      instructions: "Please reformat this response to ensure Hebrew words are not split incorrectly.",
+      instructions: "you will get chunks from another llm, sometime in hebrew. when you get hebrew chunks, pay attention if they are properly formatted- not splittet in between. if they are not properly formatted, reformat them properly. " +,
     });
 
     console.log("Reformatted Response:", reformattedResponse.text);
