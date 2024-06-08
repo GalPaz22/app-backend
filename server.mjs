@@ -42,7 +42,7 @@ app.use(bodyParser.json());
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "http://localhost:3000", 
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -172,42 +172,43 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
 
   try {
-    const loader = new PDFLoader(filePath, { splitPages: false });
+    const loader = new PDFLoader(filePath, {splitPages: false});
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionID || uuidv4();
 
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
-
+    
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
       chunkOverlap: 200,
     });
     const chunks = await textSplitter.splitText(pdfText);
-
+    
+    
     const embeddings = new OpenAIEmbeddings({
       openAIApiKey: process.env.OPENAI_API_KEY,
       model: "text-embedding-3-large",
     });
-
+    
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
     });
-
+    
     const pineconeIndex = pinecone.Index("index");
-
-    const documents = chunks.map(
-      (chunk, idx) =>
-        new Document({
-          id: `${currentSessionId}-${idx}`,
-          pageContent: chunk,
-          metadata: { text: chunk }, // Ensure metadata is correctly assigned
-        })
+    
+    const documents = chunks.map((chunk, idx) => 
+      new Document({
+        id: `${currentSessionId}-${idx}`,
+        pageContent: chunk,
+        metadata: { text: chunk },  // Ensure metadata is correctly assigned
+      })
     );
 
     // Log documents before storing
-    console.log("Documents to store:", documents);
+    console.log('Documents to store:', documents);
+    
 
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
@@ -215,7 +216,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     });
 
     const questionEmbedding = await embeddings.embedQuery(question);
-    console.log("Question Embedding:", questionEmbedding);
+    console.log('Question Embedding:', questionEmbedding);
 
     const queryResponse = await pineconeIndex.query({
       topK: 10,
@@ -223,13 +224,11 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       includeMetadata: true,
     });
 
-    console.log("Query Response:", queryResponse);
+    console.log('Query Response:', queryResponse);
 
-    const relevantChunks = queryResponse.matches.map(
-      (match) => match.metadata.text
-    );
+    const relevantChunks = queryResponse.matches.map((match) => match.metadata.text);
     console.log(match);
-    console.log("Relevant Chunks:", relevantChunks);
+    console.log('Relevant Chunks:', relevantChunks);
 
     if (!relevantChunks.length) {
       throw new Error("No relevant chunks retrieved from Pinecone");
@@ -273,34 +272,52 @@ app.post("/chat-response", async (req, res) => {
   if (!message) return res.status(400).send("Message is required");
 
   try {
-    const openai = new ChatOpenAI({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-3.5-turbo-0125",
-      streaming: true,
-      verbose: true,
-      temperature: 0.9,
-    });
-    const input =
-      "you are a chatbot, you will get user prompts in english and hebrew, and you will stream the answers to client side using string method. pay attention to stream the hebrew words properly, without splitting them- its really really important" +
-      message;
+    const input = "your prompt here: " + message;
 
-    const stream = await openai.stream(input);
+    const response = await openai.createCompletion({
+      model: "gpt-3.5-turbo-0125",
+      prompt: input,
+      max_tokens: 150,
+      temperature: 0.9,
+      stream: true,  // Enable streaming
+    }, { responseType: 'stream' });
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    for await (const chunk of stream) {
-      console.log(chunk.text);
-      res.write(`data: ${chunk.text}\n\n`);
-    }
-    res.write("data: [DONE]\n\n");
-    res.end();
+    let chunks = "";
+    response.data.on('data', chunk => {
+      const data = chunk.toString();
+      const lines = data.split('\n').filter(line => line.trim() !== '');
+      for (const line of lines) {
+        const message = line.replace(/^data: /, '');
+        if (message === '[DONE]') {
+          return;
+        }
+        try {
+          const parsed = JSON.parse(message);
+          chunks += parsed.choices[0].text;
+          res.write(`data: ${parsed.choices[0].text}\n\n`);  // Stream chunks to client
+        } catch (error) {
+          console.error('Could not JSON parse stream message', message, error);
+        }
+      }
+    });
+
+    response.data.on('end', async () => {
+      // Signal end of streaming
+      res.write("data: [DONE]\n\n");
+      res.end();
+    });
+
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
   }
 });
+
+
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
