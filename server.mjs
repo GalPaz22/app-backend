@@ -313,9 +313,9 @@ app.post("/hebrew-response", async (req, res) => {
       verbose: true,});
 
     const response = await openai.invoke(message);
-    const content = response.text.trim();
+    const content = response;
 
-    res.json({ answer: content });
+    res.toString({  content });
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
