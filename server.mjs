@@ -313,7 +313,7 @@ app.post("/hebrew-response", async (req, res) => {
       verbose: true,});
 
     const response = await openai.invoke(message);
-    const content = response;
+    const content = response.choices[0].text.trim();
     console.log(content);
 
     res.write(content);
