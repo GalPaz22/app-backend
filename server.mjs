@@ -18,7 +18,7 @@ import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { match } from "assert";
 import { ChatOpenAI } from "@langchain/openai";
-
+import OpenAI from 'openai';
 
 const app = express();
 const port = 4000;
@@ -268,34 +268,44 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     res.status(500).send("An error occurred while generating the response.");
   }
 });
-app.post("/chat-response", async (req, res) => {
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAI(configuration);
+
+app.post('/chat-response', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).send("Message is required");
 
   try {
-    const openai = new ChatOpenAI({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "gpt-4o-2024-05-13",
-      streaming: true,
-      verbose: true,
-      temperature: 0.9,
-    });
-
-    const stream = await openai.invoke(message, {stream: true});
-    
-
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    for  (const chunk of stream) {
-      chunk.Transformer = (text) => {
-        return `data: ${text}\n\n`;
-      };
-      res.write(`data: ${chunk.text.trim()}\n\n`);
-    }
-    res.write('data: [DONE]\n\n');
-    res.end();
+    const stream = await openai.createChatCompletion({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: message }],
+      stream: true,
+      temperature: 0.9,
+    });
+
+    stream.on('data', (data) => {
+      const chunk = data.choices[0].delta.content;
+      if (chunk) {
+        res.write(`data: ${chunk}\n\n`);
+      }
+    });
+
+    stream.on('end', () => {
+      res.write('data: [DONE]\n\n');
+      res.end();
+    });
+
+    stream.on('error', (error) => {
+      console.error("Error during chat:", error);
+      res.status(500).send("Internal Server Error");
+    });
+
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
