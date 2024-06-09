@@ -280,15 +280,16 @@ app.post("/chat-response", async (req, res) => {
       temperature: 0.9,
     });
 
-    const stream = await openai.invoke(message, {callbacks: {  handleLLMNewToken(token) {
-      console.log({ token });}}});
+    const stream = await openai.stream(message);
 
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
-    res.write(stream.text);
-
+    for await (const chunk of stream) {
+      res.write(`data: ${chunk.text.trim()}\n\n`);
+    }
+    res.write('data: [DONE]\n\n');
     res.end();
   } catch (error) {
     console.error("Error during chat:", error);
