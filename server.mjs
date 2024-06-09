@@ -283,51 +283,42 @@ app.post("/chat-response", async (req, res) => {
 
     const stream = await openai.stream(message);
 
-    // Define a Transform stream to preprocess text chunks
-    class HebrewTransformStream extends Transform {
-      constructor(options) {
-        super(options);
-      }
-
-      _transform(chunk, encoding, callback) {
-        // Perform any necessary preprocessing here
-        // For example, you can handle Hebrew characters or formatting
-        const preprocessedChunk = preprocessHebrew(chunk.toString());
-
-        // Push the preprocessed chunk downstream
-        this.push(preprocessedChunk);
-
-        // Call the callback to indicate that processing is complete
-        callback();
-      }
-    }
-
-    // Create an instance of the Transform stream
-    const transformStream = new HebrewTransformStream();
-
-    // Pipe the GPT-4 response stream through the Transform stream
-    stream.pipe(transformStream)
-      .on('data', (chunk) => {
-        // Write the preprocessed chunk to the response
-        res.write(`data: ${chunk}\n\n`);
-      })
-      .on('end', () => {
-        // Signal the end of the response stream
-        res.write('data: [DONE]\n\n');
-        res.end();
-      });
-
-    // Set response headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
+
+    // Define a transform stream to preprocess the chunks
+    const transformStream = new Transform({
+      transform(chunk, encoding, callback) {
+        try {
+          // Preprocess the chunk here
+          const preprocessedChunk = preprocessChunk(chunk);
+          // Send the preprocessed chunk to the client
+          res.write(`data: ${preprocessedChunk}\n\n`);
+          // Continue processing
+          callback();
+        } catch (error) {
+          // Handle errors
+          console.error("Error during chunk preprocessing:", error);
+          callback(error);
+        }
+      }
+    });
+
+    // Iterate over the chunks of the stream and preprocess each chunk
+    for await (const chunk of stream) {
+      transformStream.write(chunk);
+    }
+
+    // Send a final message to the client
+    res.write('data: [DONE]\n\n');
+    res.end();
 
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
   }
 });
-
 
 
 
