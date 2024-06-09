@@ -301,6 +301,29 @@ app.post("/chat-response", async (req, res) => {
   }
 });
 
+app.post("/hebrew-response", async (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).send("Message is required")
+
+  try {
+    const openai = new ChatOpenAI({
+      openAIApiKey: process.env.OPENAI_API_KEY, 
+      modelName: "gpt-4o-2024-05-13",
+      streaming: false,
+      verbose: true,});
+
+    const response = await openai.invoke(message);
+    const content = response.text.trim(); 
+
+    res.write(content);
+    res.end();
+  } catch (error) {
+    console.error("Error during chat:", error);
+    res.status(500).send("Internal Server Error");
+  }
+}); 
+
+
 
 
 app.listen(port, () => {
