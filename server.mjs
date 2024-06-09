@@ -11,14 +11,15 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
-import { OpenAIEmbeddings } from "@langchain/openai";
+import { OpenAI, OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { match } from "assert";
 import { ChatOpenAI } from "@langchain/openai";
-import { Transform } from "stream";
+
+
 const app = express();
 const port = 4000;
 const sessionID = uuidv4();
@@ -280,7 +281,7 @@ app.post("/chat-response", async (req, res) => {
       temperature: 0.9,
     });
 
-    const stream = await openai.stream(message);
+    const stream = await openai.invoke(message, {stream: true});
     
 
     res.setHeader('Content-Type', 'text/event-stream');
@@ -306,7 +307,7 @@ app.post("/hebrew-response", async (req, res) => {
   if (!message) return res.status(400).send("Message is required");
 
   try {
-    const openai = new ChatOpenAI({
+    const openai = new OpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY, 
       modelName: "gpt-4o-2024-05-13",
       streaming: false,
