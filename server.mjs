@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
-import { OpenAIEmbeddings } from "@langchain/embeddings";
+import {  OpenAIChat, OpenAIClient, OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
@@ -282,7 +282,7 @@ app.post('/chat-response', async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const stream = await openai.createChatCompletion({
+    const stream = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [{ role: 'user', content: message }],
       stream: true,
@@ -311,30 +311,6 @@ app.post('/chat-response', async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-app.post("/hebrew-response", async (req, res) => {
-  const { message } = req.body;
-  if (!message) return res.status(400).send("Message is required");
-
-  try {
-    const openai = new OpenAI({
-      openAIApiKey: process.env.OPENAI_API_KEY, 
-      modelName: "gpt-4o-2024-05-13",
-      streaming: false,
-      verbose: true,
-    });
-
-    const response = await openai.invoke(message);
-    const content = response.text;
-
-    res.json({ content }); // Send response as JSON
-  } catch (error) {
-    console.error("Error during chat:", error);
-    res.status(500).send("Internal Server Error");
-  }
-});
-
-
-
 
 
 
