@@ -288,7 +288,7 @@ app.post("/chat-response", async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    for await (const chunk of stream) {
+    for  (const chunk of stream) {
       chunk.Transformer = (text) => {
         return `data: ${text}\n\n`;
       };
