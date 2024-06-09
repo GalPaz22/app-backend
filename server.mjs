@@ -18,6 +18,7 @@ import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { match } from "assert";
 import { ChatOpenAI } from "@langchain/openai";
+import { Transform } from "stream";
 
 const app = express();
 const port = 4000;
@@ -282,20 +283,51 @@ app.post("/chat-response", async (req, res) => {
 
     const stream = await openai.stream(message);
 
+    // Define a Transform stream to preprocess text chunks
+    class HebrewTransformStream extends Transform {
+      constructor(options) {
+        super(options);
+      }
+
+      _transform(chunk, encoding, callback) {
+        // Perform any necessary preprocessing here
+        // For example, you can handle Hebrew characters or formatting
+        const preprocessedChunk = preprocessHebrew(chunk.toString());
+
+        // Push the preprocessed chunk downstream
+        this.push(preprocessedChunk);
+
+        // Call the callback to indicate that processing is complete
+        callback();
+      }
+    }
+
+    // Create an instance of the Transform stream
+    const transformStream = new HebrewTransformStream();
+
+    // Pipe the GPT-4 response stream through the Transform stream
+    stream.pipe(transformStream)
+      .on('data', (chunk) => {
+        // Write the preprocessed chunk to the response
+        res.write(`data: ${chunk}\n\n`);
+      })
+      .on('end', () => {
+        // Signal the end of the response stream
+        res.write('data: [DONE]\n\n');
+        res.end();
+      });
+
+    // Set response headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    for await (const chunk of stream) {
-      res.write(`data: ${chunk.text.trim()}\n\n`);
-    }
-    res.write('data: [DONE]\n\n');
-    res.end();
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
   }
 });
+
 
 
 
