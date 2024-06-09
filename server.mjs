@@ -19,7 +19,6 @@ import { Document } from "@langchain/core/documents";
 import { match } from "assert";
 import { ChatOpenAI } from "@langchain/openai";
 import { Transform } from "stream";
-
 const app = express();
 const port = 4000;
 const sessionID = uuidv4();
@@ -282,38 +281,20 @@ app.post("/chat-response", async (req, res) => {
     });
 
     const stream = await openai.stream(message);
+    
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    // Define a transform stream to preprocess the chunks
-    const transformStream = new Transform({
-      transform(chunk, encoding, callback) {
-        try {
-          // Preprocess the chunk here
-          const preprocessedChunk = preprocessChunk(chunk);
-          // Send the preprocessed chunk to the client
-          res.write(`data: ${preprocessedChunk}\n\n`);
-          // Continue processing
-          callback();
-        } catch (error) {
-          // Handle errors
-          console.error("Error during chunk preprocessing:", error);
-          callback(error);
-        }
-      }
-    });
-
-    // Iterate over the chunks of the stream and preprocess each chunk
     for await (const chunk of stream) {
-      transformStream.write(chunk);
+      chunk.Transformer = (text) => {
+        return `data: ${text}\n\n`;
+      };
+      res.write(`data: ${chunk.text.trim()}\n\n`);
     }
-
-    // Send a final message to the client
     res.write('data: [DONE]\n\n');
     res.end();
-
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
