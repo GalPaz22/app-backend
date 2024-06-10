@@ -268,10 +268,8 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     res.status(500).send("An error occurred while generating the response.");
   }
 });
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAI(configuration);
+
+const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
 
 app.post('/chat-response', async (req, res) => {
   const { message } = req.body;
