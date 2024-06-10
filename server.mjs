@@ -294,7 +294,7 @@ app.post('/chat-response', async (req, res) => {
       }
     }
     
-    res.write('data: [DONE]\n\n'); // Send a message to indicate the end of the stream
+    res.write('[DONE]\n\n'); // Send a message to indicate the end of the stream
     res.end(); // End the response to close the connection
 
   } catch (error) {
