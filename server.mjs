@@ -285,24 +285,11 @@ app.post('/chat-response', async (req, res) => {
       messages: [{ role: 'user', content: message }],
       stream: true,
       temperature: 0.9,
-    });
-
-    stream.on('data', (data) => {
-      const chunk = data.choices[0].delta.content;
-      if (chunk) {
-        res.write(`data: ${chunk}\n\n`);
-      }
-    });
-
-    stream.on('end', () => {
-      res.write('data: [DONE]\n\n');
-      res.end();
-    });
-
-    stream.on('error', (error) => {
-      console.error("Error during chat:", error);
-      res.status(500).send("Internal Server Error");
-    });
+    }); 
+    for await (const token of stream) {
+      res.write(`data: ${token.choices[0].delta.content}\n\n`);
+    }
+    
 
   } catch (error) {
     console.error("Error during chat:", error);
