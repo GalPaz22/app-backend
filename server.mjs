@@ -286,18 +286,22 @@ app.post('/chat-response', async (req, res) => {
       stream: true,
       temperature: 0.9,
     }); 
+
     for await (const token of stream) {
-      res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
-      console.log(token.choices[0].delta.content);
+      if (token.choices[0].delta.content !== undefined) {
+        res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
+        console.log(token.choices[0].delta.content);
+      }
     }
     
+    res.write('data: [DONE]\n\n'); // Send a message to indicate the end of the stream
+    res.end(); // End the response to close the connection
 
   } catch (error) {
     console.error("Error during chat:", error);
     res.status(500).send("Internal Server Error");
   }
 });
-
 
 
 
