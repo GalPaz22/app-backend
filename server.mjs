@@ -43,7 +43,7 @@ app.use(bodyParser.json());
 
 app.use(
   cors({
-    origin: "http://localhost:3000", 
+    origin: "https://ask-your-doc.vercel.app", 
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
