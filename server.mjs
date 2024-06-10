@@ -281,7 +281,7 @@ app.post('/chat-response', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
 
     const stream = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o-2024-05-13',
       messages: [{ role: 'user', content: message }],
       stream: true,
       temperature: 0.9,
