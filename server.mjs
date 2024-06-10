@@ -287,13 +287,8 @@ app.post('/chat-response', async (req, res) => {
       temperature: 0.9,
     }); 
     for await (const token of stream) {
-      res.write(`data: ${token.choices[0].delta.content}`);
+      res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
       console.log(token.choices[0].delta.content);
-      res.write('\n\n');
-
-      if (token.choices[0].finish_reason === 'stop') {
-        break;
-      }
     }
     
 
