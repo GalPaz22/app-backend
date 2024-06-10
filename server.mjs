@@ -271,6 +271,8 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
 const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
 
+let conversationHistory = [];
+
 app.post('/chat-response', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).send("Message is required");
@@ -289,12 +291,17 @@ app.post('/chat-response', async (req, res) => {
 
     for await (const token of stream) {
       if (token.choices[0].delta.content !== undefined) {
-        res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
-        console.log(token.choices[0].delta.content);
+        const assistantMessage = token.choices[0].delta.content;
+        res.write(`data: ${JSON.stringify(assistantMessage)}\n\n`);
+        console.log(assistantMessage);
+
+        // Store the conversation in history
+        conversationHistory.push({ role: 'user', text: message });
+        conversationHistory.push({ role: 'assistant', text: assistantMessage });
       }
     }
     
-    res.write('[DONE]\n\n'); // Send a message to indicate the end of the stream
+    res.write(`data: ${JSON.stringify('[DONE]')}\n\n`); // Send a message to indicate the end of the stream
     res.end(); // End the response to close the connection
 
   } catch (error) {
@@ -302,7 +309,6 @@ app.post('/chat-response', async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
-
 
 
 app.listen(port, () => {
