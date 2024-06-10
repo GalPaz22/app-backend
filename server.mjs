@@ -292,7 +292,7 @@ app.post('/chat-response', async (req, res) => {
         res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
         console.log(token.choices[0].delta.content);
         }
-      res.end();
+    
     }
     
 
