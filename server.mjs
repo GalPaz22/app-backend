@@ -272,7 +272,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
 
 let conversationHistory = [];
-
 app.post('/chat-response', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).send("Message is required");
@@ -282,6 +281,9 @@ app.post('/chat-response', async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
+    const currentSessionId = sessionID || uuidv4(); // Retrieve or create a new session ID
+    const conversationHistory = sessionMemory[currentSessionId] || []; // Retrieve the session's conversation history
+
     const stream = await openai.chat.completions.create({
       model: 'gpt-4o-2024-05-13',
       messages: [{ role: 'user', content: message + conversationHistory.join('\n') }],
@@ -289,18 +291,21 @@ app.post('/chat-response', async (req, res) => {
       temperature: 0.9,
     }); 
 
+    let assistantMessage = '';
+
     for await (const token of stream) {
       if (token.choices[0].delta.content !== undefined) {
-        const assistantMessage = token.choices[0].delta.content;
-        res.write(`data: ${JSON.stringify(assistantMessage)}\n\n`);
-        console.log(assistantMessage);
-
-        // Store the conversation in history
-        conversationHistory.push({ role: 'user', text: message });
-        conversationHistory.push({ role: 'assistant', text: assistantMessage });
+        assistantMessage += token.choices[0].delta.content;
+        res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
+        console.log(token.choices[0].delta.content);
       }
     }
-    
+
+    // Store the conversation in history
+    conversationHistory.push({ role: 'user', text: message });
+    conversationHistory.push({ role: 'assistant', text: assistantMessage });
+    sessionMemory[currentSessionId] = conversationHistory; // Save the updated history
+
     res.write(`data: ${JSON.stringify('[DONE]')}\n\n`); // Send a message to indicate the end of the stream
     res.end(); // End the response to close the connection
 
