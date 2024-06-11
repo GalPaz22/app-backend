@@ -256,6 +256,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     
     res.json({ sessionId: currentSessionId, answer: content });
+  await pineconeIndex.deleteAll();
     } catch (error) {
       console.error("Error generating response:", error);
       fs.unlink(filePath, (err) => {
@@ -265,7 +266,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
           });
           res.status(500).send("An error occurred while generating the response.");
           }
-        await pineconeIndex.deleteAll();
 });
 
 const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
