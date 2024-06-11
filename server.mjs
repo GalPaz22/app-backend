@@ -272,9 +272,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
 
 
-const { MongoClient } = require('mongodb');
-const uri = 'your_mongodb_connection_uri'; // Update with your MongoDB connection URI
-const client = new MongoClient(uri);
+
 
 app.post('/chat-response', async (req, res) => {
   const { message, sessionID } = req.body;
