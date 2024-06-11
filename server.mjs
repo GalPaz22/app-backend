@@ -159,45 +159,46 @@ app.post("/logout", async (req, res) => {
       );
 
       await sessionsCollection.deleteAll();
-
+      
       res.send("Logout successful");
-    }
-  } catch (error) {
-    console.error("Error during logout:", error);
-    res.status(500).send("Internal Server Error");
-  }
-});
+      }
+      } catch (error) {
+        console.error("Error during logout:", error);
+        res.status(500).send("Internal Server Error");
+        }
+        });
 
-app.post("/generate-response", upload.single("file"), async (req, res) => {
-  const { question, apiKey } = req.body;
-  const filePath = req.file.path;
-
-  try {
-    const loader = new PDFLoader(filePath, {splitPages: false});
-    const docs = await loader.load();
+        app.post("/generate-response", upload.single("file"), async (req, res) => {
+          const { question, apiKey } = req.body;
+          const filePath = req.file.path;
+          
+          try {
+            const loader = new PDFLoader(filePath, {splitPages: false});
+            const docs = await loader.load();
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionID || uuidv4();
-
+    
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
     
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
       chunkOverlap: 200,
-    });
-    const chunks = await textSplitter.splitText(pdfText);
-    
-    
-    const embeddings = new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      model: "text-embedding-3-large",
-    });
-    
-    const pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY,
-    });
-    
-    const pineconeIndex = pinecone.Index("index");
+      });
+      const chunks = await textSplitter.splitText(pdfText);
+      
+      
+      const embeddings = new OpenAIEmbeddings({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        model: "text-embedding-3-large",
+        });
+        
+        const pinecone = new Pinecone({
+          apiKey: process.env.PINECONE_API_KEY,
+          });
+          
+          const pineconeIndex = pinecone.Index("index");
+          await pineconeIndex.deleteAll();
     
     const documents = chunks.map((chunk, idx) => 
       new Document({
@@ -256,7 +257,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     
     res.json({ sessionId: currentSessionId, answer: content });
-  await pineconeIndex.deleteAll();
     } catch (error) {
       console.error("Error generating response:", error);
       fs.unlink(filePath, (err) => {
