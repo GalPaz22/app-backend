@@ -202,7 +202,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const documents = chunks.map((chunk, idx) => 
       new Document({
         id: `${currentSessionId}-${idx}`,
-        pageContent: chunk,
         metadata: { text: chunk },  // Ensure metadata is correctly assigned
       })
     );
@@ -255,18 +254,18 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     conversationHistory.push(`Assistant: ${content}`);
     sessionMemory[currentSessionId] = conversationHistory;
 
-    await pineconeIndex.deleteAll();
-
+    
     res.json({ sessionId: currentSessionId, answer: content });
-  } catch (error) {
-    console.error("Error generating response:", error);
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error("Error deleting file:", err);
-      }
-    });
-    res.status(500).send("An error occurred while generating the response.");
-  }
+    } catch (error) {
+      console.error("Error generating response:", error);
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error("Error deleting file:", err);
+          }
+          });
+          res.status(500).send("An error occurred while generating the response.");
+          }
+        await pineconeIndex.deleteAll();
 });
 
 const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
