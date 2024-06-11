@@ -283,9 +283,6 @@ app.post('/chat-response', async (req, res) => {
 
     const currentSessionId = sessionID || uuidv4(); // Retrieve or create a new session ID
     const conversationHistory = sessionMemory[currentSessionId] || []; // Retrieve the session's conversation history
-    conversationHistory.push({ role: 'user', text: message });
-    conversationHistory.push({ role: 'assistant', text: assistantMessage });
-    sessionMemory[currentSessionId] = conversationHistory; // Save the updated history
     const input = 'you are a chatbot, you will answer in english or hebrew, depend on the question language you got. answer according to the conversation history as well as the context of the question.'+ message; + conversationHistory.join('\n');
 
     const stream = await openai.chat.completions.create({
@@ -303,8 +300,11 @@ app.post('/chat-response', async (req, res) => {
         res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
         console.log(token.choices[0].delta.content);
       }
-    }
-
+      
+      conversationHistory.push({ role: 'user', text: message });
+      conversationHistory.push({ role: 'assistant', text: assistantMessage });
+      sessionMemory[currentSessionId] = conversationHistory; // Save the updated history
+      }
     // Store the conversation in history
 
     res.write( `data: ${JSON.stringify('[DONE]')}\n\n`); // Send a message to indicate the end of the stream
