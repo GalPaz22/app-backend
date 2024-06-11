@@ -271,7 +271,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
 const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
 
-let conversationHistory = [];
+
 app.post('/chat-response', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).send("Message is required");
@@ -283,6 +283,7 @@ app.post('/chat-response', async (req, res) => {
 
     const currentSessionId = sessionID || uuidv4(); // Retrieve or create a new session ID
     const conversationHistory = sessionMemory[currentSessionId] || []; // Retrieve the session's conversation history
+    const input = 'you are a chatbot, you will answer in english or hebrew, depend on the question language you got. answer according to the conversation history as well as the context of the question.'+ message; + conversationHistory.join('\n');
 
     const stream = await openai.chat.completions.create({
       model: 'gpt-4o-2024-05-13',
@@ -306,7 +307,7 @@ app.post('/chat-response', async (req, res) => {
     conversationHistory.push({ role: 'assistant', text: assistantMessage });
     sessionMemory[currentSessionId] = conversationHistory; // Save the updated history
 
-    res.write(`data: ${JSON.stringify('[DONE]')}\n\n`); // Send a message to indicate the end of the stream
+    res.write( `data: ${JSON.stringify('[DONE]')}\n\n`); // Send a message to indicate the end of the stream
     res.end(); // End the response to close the connection
 
   } catch (error) {
