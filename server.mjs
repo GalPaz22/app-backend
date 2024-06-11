@@ -158,7 +158,7 @@ app.post("/logout", async (req, res) => {
         { $unset: { activeSession: "" } }
       );
 
-      await sessionsCollection.deleteOne({ sessionID: user.activeSession });
+      await sessionsCollection.deleteAll();
 
       res.send("Logout successful");
     }
@@ -272,13 +272,19 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
 
 
+const { MongoClient } = require('mongodb');
+const uri = 'your_mongodb_connection_uri'; // Update with your MongoDB connection URI
+const client = new MongoClient(uri);
+
 app.post('/chat-response', async (req, res) => {
-  const db = client.db("Cluster0"); // Update with your main database name
-  const Conversation = db.collection("conversations");
   const { message, sessionID } = req.body;
   if (!message) return res.status(400).send('Message is required');
 
   try {
+    await client.connect(); // Connect to the MongoDB database
+    const db = client.db("Cluster0"); // Update with your main database name
+    const Conversation = db.collection("conversations");
+
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -287,7 +293,7 @@ app.post('/chat-response', async (req, res) => {
     let conversation = await Conversation.findOne({ sessionId: currentSessionId });
 
     if (!conversation) {
-      conversation = new Conversation({ sessionId: currentSessionId, history: [] });
+      conversation = { sessionId: currentSessionId, history: [] };
     }
 
     const input = 'you are a chatbot, you will answer in english or hebrew, depend on the question language you got. answer according to the conversation history as well as the context of the question.' + message;
@@ -311,7 +317,11 @@ app.post('/chat-response', async (req, res) => {
       conversation.history.push({ role: 'assistant', text: assistantMessage });
     }
 
-    await conversation.save(); // Save the conversation in the database
+    await Conversation.updateOne(
+      { sessionId: currentSessionId },
+      { $set: { history: conversation.history } },
+      { upsert: true } // Create a new document if it doesn't exist
+    );
 
     res.write(`data: ${JSON.stringify('[DONE]')}\n\n`);
     res.end();
@@ -319,6 +329,8 @@ app.post('/chat-response', async (req, res) => {
   } catch (error) {
     console.error('Error during chat:', error);
     res.status(500).send('Internal Server Error');
+  } finally {
+    await client.close(); // Close the MongoDB connection
   }
 });
 
