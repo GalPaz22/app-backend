@@ -274,16 +274,13 @@ const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
 
 
 
+const conversations = {}; // Object to store conversations based on session ID
+
 app.post('/chat-response', async (req, res) => {
-  const { message } = req.body;
+  const { message} = req.body;
   if (!message) return res.status(400).send('Message is required');
 
   try {
-    // Connect to the MongoDB database
-    await client.connect();
-    const db = client.db("Cluster0"); // Update with your main database name
-    const Conversation = db.collection("conversations");
-
     // Set response headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -292,12 +289,11 @@ app.post('/chat-response', async (req, res) => {
     // Get the current session ID or generate a new one
     const currentSessionId = sessionID 
 
-    // Find the conversation in the database
-    let conversation = await Conversation.findOne({ sessionId: currentSessionId });
-
-    // Initialize conversation history if it doesn't exist
+    // Find or create the conversation based on the session ID
+    let conversation = conversations[currentSessionId];
     if (!conversation) {
       conversation = { sessionId: currentSessionId, history: [] };
+      conversations[currentSessionId] = conversation;
     }
 
     // Add the user message to the conversation history
@@ -330,13 +326,6 @@ app.post('/chat-response', async (req, res) => {
     // Add the assistant message to the conversation history
     conversation.history.push({ role: 'assistant', text: assistantMessage });
 
-    // Update the conversation in the database
-    await Conversation.updateOne(
-      { sessionId: currentSessionId },
-      { $set: { history: conversation.history } },
-      { upsert: true }
-    );
-
     // Send end of stream signal
     res.write(`data: ${JSON.stringify('[DONE]')}\n\n`);
     res.end();
@@ -344,11 +333,9 @@ app.post('/chat-response', async (req, res) => {
   } catch (error) {
     console.error('Error during chat:', error);
     res.status(500).send('Internal Server Error');
-  } finally {
-    // Close the MongoDB connection
-    await client.close();
   }
 });
+
 
 
 app.listen(port, () => {
