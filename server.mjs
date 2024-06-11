@@ -17,7 +17,6 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { match } from "assert";
-import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
 
 
 import OpenAI from 'openai';
@@ -190,8 +189,9 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const chunks = await textSplitter.splitText(pdfText);
     
     
-    const embeddings = new HuggingFaceTransformersEmbeddings({
-      model: "sentence-transformers/all-MiniLM-L6-v2",
+    const embeddings = new OpenAIEmbeddings({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      model: "text-embedding-3-small",
     });
     
     const pinecone = new Pinecone({
