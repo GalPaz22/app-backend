@@ -279,23 +279,38 @@ app.post('/chat-response', async (req, res) => {
   if (!message) return res.status(400).send('Message is required');
 
   try {
-    await client.connect(); // Connect to the MongoDB database
+    // Connect to the MongoDB database
+    await client.connect();
     const db = client.db("Cluster0"); // Update with your main database name
     const Conversation = db.collection("conversations");
 
+    // Set response headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
+    // Get the current session ID or generate a new one
     const currentSessionId = sessionID || uuidv4();
+
+    // Find the conversation in the database
     let conversation = await Conversation.findOne({ sessionId: currentSessionId });
 
+    // Initialize conversation history if it doesn't exist
     if (!conversation) {
       conversation = { sessionId: currentSessionId, history: [] };
     }
 
-    const input = 'you are a chatbot, you will answer in english or hebrew, depend on the question language you got. answer according to the conversation history as well as the context of the question.' + message+ conversation.history.join('\n');
+    // Add the user message to the conversation history
+    conversation.history.push({ role: 'user', text: message });
 
+    // Construct input message for the chatbot including conversation history
+    let input = 'You are a chatbot. You will answer in English or Hebrew, depending on the question language you receive.\n';
+    for (const entry of conversation.history) {
+      input += entry.text + '\n';
+    }
+    input += message;
+
+    // Send input to OpenAI Chat API and process the response
     const stream = await openai.chat.completions.create({
       model: 'gpt-4o-2024-05-13',
       messages: [{ role: 'user', content: input }],
@@ -310,17 +325,19 @@ app.post('/chat-response', async (req, res) => {
         assistantMessage += token.choices[0].delta.content;
         res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
       }
-
-      conversation.history.push({ role: 'user', text: message });
-      conversation.history.push({ role: 'assistant', text: assistantMessage });
     }
 
+    // Add the assistant message to the conversation history
+    conversation.history.push({ role: 'assistant', text: assistantMessage });
+
+    // Update the conversation in the database
     await Conversation.updateOne(
       { sessionId: currentSessionId },
       { $set: { history: conversation.history } },
-      { upsert: true } // Create a new document if it doesn't exist
+      { upsert: true }
     );
 
+    // Send end of stream signal
     res.write(`data: ${JSON.stringify('[DONE]')}\n\n`);
     res.end();
 
@@ -328,10 +345,10 @@ app.post('/chat-response', async (req, res) => {
     console.error('Error during chat:', error);
     res.status(500).send('Internal Server Error');
   } finally {
-    await client.close(); // Close the MongoDB connection
+    // Close the MongoDB connection
+    await client.close();
   }
 });
-
 
 
 app.listen(port, () => {
