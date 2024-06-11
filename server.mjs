@@ -50,7 +50,8 @@ app.use(
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization", "sessionID"],
+    allowedHeaders: ["Content-Type", "Authorization", "sessionID", "Access-Control-Allow-Origin"],
+    
   })
 );
 
