@@ -273,24 +273,31 @@ const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
 
 
 app.post('/chat-response', async (req, res) => {
-  const { message } = req.body;
-  if (!message) return res.status(400).send("Message is required");
+  const db = client.db("Cluster0"); // Update with your main database name
+  const Conversation = db.collection("conversations");
+  const { message, sessionID } = req.body;
+  if (!message) return res.status(400).send('Message is required');
 
   try {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const currentSessionId = sessionID || uuidv4(); // Retrieve or create a new session ID
-    const conversationHistory = sessionMemory[currentSessionId] || []; // Retrieve the session's conversation history
-    const input = 'you are a chatbot, you will answer in english or hebrew, depend on the question language you got. answer according to the conversation history as well as the context of the question.'+ message; + conversationHistory.join('\n');
+    const currentSessionId = sessionID || uuidv4();
+    let conversation = await Conversation.findOne({ sessionId: currentSessionId });
+
+    if (!conversation) {
+      conversation = new Conversation({ sessionId: currentSessionId, history: [] });
+    }
+
+    const input = 'you are a chatbot, you will answer in english or hebrew, depend on the question language you got. answer according to the conversation history as well as the context of the question.' + message;
 
     const stream = await openai.chat.completions.create({
       model: 'gpt-4o-2024-05-13',
       messages: [{ role: 'user', content: input }],
       stream: true,
       temperature: 0.9,
-    }); 
+    });
 
     let assistantMessage = '';
 
@@ -298,23 +305,23 @@ app.post('/chat-response', async (req, res) => {
       if (token.choices[0].delta.content !== undefined) {
         assistantMessage += token.choices[0].delta.content;
         res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
-        console.log(token.choices[0].delta.content);
       }
-      
-      conversationHistory.push({ role: 'user', text: message });
-      conversationHistory.push({ role: 'assistant', text: assistantMessage });
-      sessionMemory[currentSessionId] = conversationHistory; // Save the updated history
-      }
-    // Store the conversation in history
 
-    res.write( `data: ${JSON.stringify('[DONE]')}\n\n`); // Send a message to indicate the end of the stream
-    res.end(); // End the response to close the connection
+      conversation.history.push({ role: 'user', text: message });
+      conversation.history.push({ role: 'assistant', text: assistantMessage });
+    }
+
+    await conversation.save(); // Save the conversation in the database
+
+    res.write(`data: ${JSON.stringify('[DONE]')}\n\n`);
+    res.end();
 
   } catch (error) {
-    console.error("Error during chat:", error);
-    res.status(500).send("Internal Server Error");
+    console.error('Error during chat:', error);
+    res.status(500).send('Internal Server Error');
   }
 });
+
 
 
 app.listen(port, () => {
