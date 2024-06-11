@@ -275,7 +275,7 @@ const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
 
 
 app.post('/chat-response', async (req, res) => {
-  const { message, sessionID } = req.body;
+  const { message } = req.body;
   if (!message) return res.status(400).send('Message is required');
 
   try {
@@ -290,7 +290,7 @@ app.post('/chat-response', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
 
     // Get the current session ID or generate a new one
-    const currentSessionId = sessionID || uuidv4();
+    const currentSessionId = sessionID 
 
     // Find the conversation in the database
     let conversation = await Conversation.findOne({ sessionId: currentSessionId });
@@ -306,7 +306,7 @@ app.post('/chat-response', async (req, res) => {
     // Construct input message for the chatbot including conversation history
     let input = 'You are a chatbot. You will answer in English or Hebrew, depending on the question language you receive.\n';
     for (const entry of conversation.history) {
-      input += entry.text + '\n';
+      input += entry.role + ': ' + entry.text + '\n';
     }
     input += message;
 
