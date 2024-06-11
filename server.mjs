@@ -46,7 +46,7 @@ app.use(bodyParser.json());
 
 app.use(
   cors({
-    origin: "https://ask-your-doc.vercel.app", 
+    origin: "https://ask-your-doc.vercel.app/generate-response", 
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -194,6 +194,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     
     const embeddings = new HuggingFaceTransformersEmbeddings({
       model: "Xenova/all-MiniLM-L6-v2",
+      
     });
     
     const pinecone = new Pinecone({
