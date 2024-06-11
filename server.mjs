@@ -294,7 +294,7 @@ app.post('/chat-response', async (req, res) => {
       conversation = { sessionId: currentSessionId, history: [] };
     }
 
-    const input = 'you are a chatbot, you will answer in english or hebrew, depend on the question language you got. answer according to the conversation history as well as the context of the question.' + message;
+    const input = 'you are a chatbot, you will answer in english or hebrew, depend on the question language you got. answer according to the conversation history as well as the context of the question.' + message+ conversation.history.join('\n');
 
     const stream = await openai.chat.completions.create({
       model: 'gpt-4o-2024-05-13',
