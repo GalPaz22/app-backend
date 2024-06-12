@@ -47,7 +47,6 @@ app.use(bodyParser.json());
 app.use(
   cors({
     origin: "*", 
-    credentials: true,
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "sessionID", "Access-Control-Allow-Origin"],
