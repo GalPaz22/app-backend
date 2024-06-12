@@ -46,10 +46,11 @@ app.use(bodyParser.json());
 
 app.use(
   cors({
-    origin: "*", 
+    origin: "https://ask-your-doc.vercel.app", 
+    credentials: true,
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization", "sessionID", "Access-Control-Allow-Origin"],
+    allowedHeaders: ["Content-Type", "Authorization", "sessionID", ],
     
   })
 );
