@@ -46,7 +46,7 @@ app.use(bodyParser.json());
 
 app.use(
   cors({
-    origin: "https://ask-your-doc.vercel.app", 
+    origin: ["https://ask-your-doc.vercel.app", "https://ask-your-doc.vercel.app/ask"], 
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
