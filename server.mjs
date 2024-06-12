@@ -44,18 +44,9 @@ client
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-const allowedOrigins = ["http://localhost:3000","https://ask-your-doc.vercel.app"];
-
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin, like mobile apps or curl requests
-      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: ["https://ask-your-doc.vercel.app", "https://ask-your-doc.vercel.app/ask"], 
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
@@ -190,7 +181,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionID || uuidv4();
-    
 
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
