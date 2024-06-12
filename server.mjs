@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
-import {  OpenAIChat, OpenAIClient, OpenAIEmbeddings } from "@langchain/openai";
+import { OpenAIChat, OpenAIClient, OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
@@ -19,9 +19,7 @@ import { Document } from "@langchain/core/documents";
 import { match } from "assert";
 import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
 
-
-
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
 const app = express();
 const port = 4000;
@@ -46,12 +44,14 @@ app.use(bodyParser.json());
 
 app.use(
   cors({
-    origin: ["https://ask-your-doc.vercel.app", "https://ask-your-doc.vercel.app/ask"], 
+    origin: [
+      "https://ask-your-doc.vercel.app",
+      "https://ask-your-doc.vercel.app/ask",
+    ],
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization", "sessionID", ],
-    
+    allowedHeaders: ["Content-Type", "Authorization", "sessionID"],
   })
 );
 
@@ -177,43 +177,45 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
 
   try {
-    const loader = new PDFLoader(filePath, {splitPages: false});
+    const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
     const currentSessionId = sessionID || uuidv4();
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, GET, PUT");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    next();
 
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
-    
+
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
       chunkOverlap: 200,
     });
     const chunks = await textSplitter.splitText(pdfText);
-    
-    
+
     const embeddings = new HuggingFaceTransformersEmbeddings({
       model: "Xenova/all-MiniLM-L6-v2",
-      
     });
-    
+
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
     });
-    
+
     const pineconeIndex = pinecone.Index("index");
-    
-    const documents = chunks.map((chunk, idx) => 
-      new Document({
-        id: `${currentSessionId}-${idx}`,
-        pageContent: chunk,
-        metadata: { text: chunk },  // Ensure metadata is correctly assigned
-      })
+
+    const documents = chunks.map(
+      (chunk, idx) =>
+        new Document({
+          id: `${currentSessionId}-${idx}`,
+          pageContent: chunk,
+          metadata: { text: chunk }, // Ensure metadata is correctly assigned
+        })
     );
 
     // Log documents before storing
-    console.log('Documents to store:', documents);
-    
+    console.log("Documents to store:", documents);
 
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
@@ -221,7 +223,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     });
 
     const questionEmbedding = await embeddings.embedQuery(question);
-    console.log('Question Embedding:', questionEmbedding);
+    console.log("Question Embedding:", questionEmbedding);
 
     const queryResponse = await pineconeIndex.query({
       topK: 10,
@@ -229,11 +231,13 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       includeMetadata: true,
     });
 
-    console.log('Query Response:', queryResponse);
+    console.log("Query Response:", queryResponse);
 
-    const relevantChunks = queryResponse.matches.map((match) => match.metadata.text);
+    const relevantChunks = queryResponse.matches.map(
+      (match) => match.metadata.text
+    );
     console.log(match);
-    console.log('Relevant Chunks:', relevantChunks);
+    console.log("Relevant Chunks:", relevantChunks);
 
     if (!relevantChunks.length) {
       throw new Error("No relevant chunks retrieved from Pinecone");
@@ -259,7 +263,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     conversationHistory.push(`Assistant: ${content}`);
     sessionMemory[currentSessionId] = conversationHistory;
 
-   pineconeIndex.deleteAll();
+    pineconeIndex.deleteAll();
 
     res.json({ sessionId: currentSessionId, answer: content });
   } catch (error) {
@@ -273,25 +277,22 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
   }
 });
 
-const openai = new OpenAI( {apiKey: process.env.OPENAI_API_KEY},);
-
-
-
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const conversations = {}; // Object to store conversations based on session ID
 
-app.post('/chat-response', async (req, res) => {
-  const { message} = req.body;
-  if (!message) return res.status(400).send('Message is required');
+app.post("/chat-response", async (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).send("Message is required");
 
   try {
     // Set response headers
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
 
     // Get the current session ID or generate a new one
-    const currentSessionId = sessionID 
+    const currentSessionId = sessionID;
 
     // Find or create the conversation based on the session ID
     let conversation = conversations[currentSessionId];
@@ -301,46 +302,46 @@ app.post('/chat-response', async (req, res) => {
     }
 
     // Add the user message to the conversation history
-    conversation.history.push({ role: 'user', text: message });
+    conversation.history.push({ role: "user", text: message });
 
     // Construct input message for the chatbot including conversation history
-    let input = 'You are a chatbot. You will answer in English or Hebrew, depending on the question language you receive.\n';
+    let input =
+      "You are a chatbot. You will answer in English or Hebrew, depending on the question language you receive.\n";
     for (const entry of conversation.history) {
-      input += entry.role + ': ' + entry.text + '\n';
+      input += entry.role + ": " + entry.text + "\n";
     }
     input += message;
 
     // Send input to OpenAI Chat API and process the response
     const stream = await openai.chat.completions.create({
-      model: 'gpt-4o-2024-05-13',
-      messages: [{ role: 'user', content: input }],
+      model: "gpt-4o-2024-05-13",
+      messages: [{ role: "user", content: input }],
       stream: true,
       temperature: 0.9,
     });
 
-    let assistantMessage = '';
+    let assistantMessage = "";
 
     for await (const token of stream) {
       if (token.choices[0].delta.content !== undefined) {
         assistantMessage += token.choices[0].delta.content;
-        res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
+        res.write(
+          `data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`
+        );
       }
     }
 
     // Add the assistant message to the conversation history
-    conversation.history.push({ role: 'assistant', text: assistantMessage });
+    conversation.history.push({ role: "assistant", text: assistantMessage });
 
     // Send end of stream signal
-    res.write(`data: ${JSON.stringify('[DONE]')}\n\n`);
+    res.write(`data: ${JSON.stringify("[DONE]")}\n\n`);
     res.end();
-
   } catch (error) {
-    console.error('Error during chat:', error);
-    res.status(500).send('Internal Server Error');
+    console.error("Error during chat:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
-
-
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
