@@ -229,7 +229,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     console.log("Query Response:", queryResponse);
 
-    const relevantChunks = queryResponse.searchResults.map(
+    const relevantChunks = queryResponse.matches.map(
       (match) => match.metadata.text
     );
     
