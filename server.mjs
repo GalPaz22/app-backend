@@ -17,9 +17,6 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { match } from "assert";
-import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
-import { Pipeline, pipeline } from "@xenova/transformers";
-
 
 
 import OpenAI from 'openai';
@@ -47,15 +44,13 @@ app.use(bodyParser.json());
 
 app.use(
   cors({
-    origin: ["https://ask-your-doc.vercel.app", "https://ask-your-doc.vercel.app/ask"], 
+    origin: "https://ask-your-doc.vercel.app", 
     credentials: true,
     optionsSuccessStatus: 200,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "sessionID", ],
-    
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization", "sessionID"],
   })
 );
-app.options("*", cors());
 
 app.use(
   session({
@@ -196,7 +191,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     
     const embeddings = new OpenAIEmbeddings({
       openAIApiKey: process.env.OPENAI_API_KEY,
-      modelName: "text-embedding-3-small",
+      model: "text-embedding-3-small",
     });
     
     const pinecone = new Pinecone({
@@ -222,7 +217,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       maxConcurrency: 5,
     });
 
-    const questionEmbedding = await embeddings(question);
+    const questionEmbedding = await embeddings.embedQuery(question);
     console.log('Question Embedding:', questionEmbedding);
 
     const queryResponse = await pineconeIndex.query({
