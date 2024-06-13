@@ -195,7 +195,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       model: "voyage-multilingual-2"
     });
     
-    const embeddingsResponse = await embeddings.embedDocuments(chunks);
 
     
     const pinecone = new Pinecone({
@@ -216,7 +215,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     console.log('Documents to store:', documents);
     
 
-    await PineconeStore.fromDocuments(documents,embeddingsResponse, {
+    await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
     });
