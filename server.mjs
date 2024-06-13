@@ -19,10 +19,6 @@ import { Document } from "@langchain/core/documents";
 import { match } from "assert";
 import { VoyageEmbeddings } from "@langchain/community/embeddings/voyage";
 
-const embeddings = new VoyageEmbeddings({
-  apiKey: "YOUR-API-KEY", // In Node.js defaults to process.env.VOYAGEAI_API_KEY
-  inputType: "document", // Optional: specify input type as 'query', 'document', or omit for None / Undefined / Null
-});
 
 import OpenAI from 'openai';
 
@@ -198,6 +194,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       apiKey: apiKey, // In Node.js defaults to process.env.VOYAGEAI_API_KEY
       model: "voyage-multilingual-2"
     });
+
     
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
