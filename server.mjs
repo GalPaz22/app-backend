@@ -190,20 +190,17 @@ app.post('/generate-response', upload.single('file'), async (req, res) => {
       throw new Error('PDF content is empty');
     }
 
-    const currentSessionId = req.sessionID || uuidv4(); // Ensure sessionID is retrieved correctly
-    const conversationHistory = sessionMemory[currentSessionId] || [];
+   // Ensure sessionID is retrieved correctly
+    const conversationHistory = sessionMemory[sessionID] || [];
     conversationHistory.push(`User: ${question}`);
 
     // Split text into chunks
-    const textSplitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 500,
-      chunkOverlap: 200,
-    });
-    const chunks = await textSplitter.splitText(pdfText);
+
 
     // Embed chunks using VoyageEmbeddings
     const embeddings = new VoyageEmbeddings({
       apiKey: process.env.VOYAGE_API_KEY, // Ensure this is correctly set
+      model: 'voyage-multilingual-2',
       inputType: 'document',
     });
 
@@ -229,7 +226,7 @@ app.post('/generate-response', upload.single('file'), async (req, res) => {
 
     console.log('Documents to store:', documents);
 
-    await PineconeStore.fromDocuments(documents, embeddings, {
+    await PineconeStore.fromDocuments(pdfText, embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
     });
