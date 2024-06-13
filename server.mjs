@@ -204,7 +204,6 @@ app.post('/generate-response', upload.single('file'), async (req, res) => {
     // Embed chunks using VoyageEmbeddings
     const embeddings = new VoyageEmbeddings({
       apiKey: process.env.VOYAGE_API_KEY, // Ensure this is correctly set
-      model: 'voyage-multilingual-2',
       inputType: 'document',
     });
 
