@@ -229,10 +229,10 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     console.log("Query Response:", queryResponse);
 
-    const relevantChunks = queryResponse.matches.map(
+    const relevantChunks = queryResponse.searchResults.map(
       (match) => match.metadata.text
     );
-    console.log(match);
+    
     console.log("Relevant Chunks:", relevantChunks);
 
     if (!relevantChunks.length) {
