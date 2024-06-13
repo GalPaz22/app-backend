@@ -195,13 +195,13 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     
     
     const embeddings = new VoyageEmbeddings({
-      apiKey: process.env.VOYAGEAI_API_KEY, // In Node.js defaults to process.env.VOYAGEAI_API_KEY
+      apiKey: apiKey, // In Node.js defaults to process.env.VOYAGEAI_API_KEY
       inputType: "document", // Optional: specify input type as 'query', 'document', or omit for None / Undefined / Null
       model: "voyage-multilingual-2"
     });
     
     const pinecone = new Pinecone({
-      apiKey: apiKey
+      apiKey: process.env.PINECONE_API_KEY,
     });
     
     const pineconeIndex = pinecone.Index("index");
