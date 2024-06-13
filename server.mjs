@@ -17,7 +17,12 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { match } from "assert";
+import { VoyageEmbeddings } from "@langchain/community/embeddings/voyage";
 
+const embeddings = new VoyageEmbeddings({
+  apiKey: "YOUR-API-KEY", // In Node.js defaults to process.env.VOYAGEAI_API_KEY
+  inputType: "document", // Optional: specify input type as 'query', 'document', or omit for None / Undefined / Null
+});
 
 import OpenAI from 'openai';
 
@@ -189,9 +194,9 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const chunks = await textSplitter.splitText(pdfText);
     
     
-    const embeddings = new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-      model: "text-embedding-3-small",
+    const embeddings = new VoyageEmbeddings({
+      apiKey: process.env.VOYAGEAI_API_KEY, // In Node.js defaults to process.env.VOYAGEAI_API_KEY
+      inputType: "document", // Optional: specify input type as 'query', 'document', or omit for None / Undefined / Null
     });
     
     const pinecone = new Pinecone({
