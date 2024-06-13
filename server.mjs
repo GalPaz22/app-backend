@@ -11,19 +11,15 @@ import { v4 as uuidv4 } from "uuid";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
-import { OpenAIChat, OpenAIClient, OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { CohereEmbeddings } from "@langchain/cohere";
-
-
 import OpenAI from "openai";
 
 const app = express();
 const port = 4000;
-const sessionID = uuidv4();
 const mongoUri = process.env.MONGO_URI;
 const client = new MongoClient(mongoUri, {
   useNewUrlParser: true,
@@ -78,7 +74,7 @@ app.post("/login", async (req, res) => {
     return res.status(400).send("Email and password are required");
 
   try {
-    const db = client.db("Cluster0"); // Update with your main database name
+    const db = client.db("Cluster0");
     const usersCollection = db.collection("users");
     const sessionsCollection = client.db("test").collection("sessions");
 
@@ -105,6 +101,7 @@ app.post("/login", async (req, res) => {
       }
     }
 
+    const sessionID = uuidv4();
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
     await usersCollection.updateOne(
       { _id: user._id },
@@ -149,6 +146,7 @@ app.post("/logout", async (req, res) => {
     const db = client.db("Cluster0");
     const usersCollection = db.collection("users");
     const sessionsCollection = client.db("test").collection("sessions");
+    const sessionID = req.sessionID;
     const user = await usersCollection.findOne({ activeSession: sessionID });
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
@@ -157,7 +155,7 @@ app.post("/logout", async (req, res) => {
     const pineconeIndex = pinecone.Index("index");
 
     await pineconeIndex.delete({
-      namespace: sessionID, 
+      namespace: sessionID,
     });
 
     if (!user) return res.status(404).send("User not found");
@@ -168,7 +166,7 @@ app.post("/logout", async (req, res) => {
         { $unset: { activeSession: "" } }
       );
 
-      await sessionsCollection.deleteAll();
+      await sessionsCollection.deleteOne({ sessionID });
 
       res.send("Logout successful");
     }
@@ -178,19 +176,29 @@ app.post("/logout", async (req, res) => {
   }
 });
 
-app.post("/generate-response", upload.single("file"), async (req, res) => {
-  const { question, apiKey } = req.body;
+// New endpoint to embed and store the document
+app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
-  const currentSessionId = sessionID;
+  const sessionID = uuidv4(); // Generate a unique session ID for this document
 
   try {
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
+    if (!docs || docs.length === 0 || !docs[0].pageContent) {
+      throw new Error("Failed to load PDF or no content found");
+    }
     const pdfText = docs[0].pageContent;
-    const documentId = `${currentSessionId}-document`; // Unique identifier for the document
 
-    const conversationHistory = sessionMemory[currentSessionId] || [];
-    conversationHistory.push(`User: ${question}`);
+    const textSplitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 500,
+      chunkOverlap: 200,
+    });
+    const chunks = await textSplitter.splitText(pdfText);
+
+    const embeddings = new CohereEmbeddings({
+      apiKey: process.env.COHERE_API_KEY,
+      batchSize: 48,
+    });
 
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
@@ -198,51 +206,55 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const pineconeIndex = pinecone.Index("index");
 
-    // Check if the document already exists in Pinecone
-    const existingEmbeddings = await pineconeIndex.query({
-      vector: [0], // Dummy vector since we only want to match the ID
-      filter: { id: documentId },
-      topK: 1,
-      includeMetadata: true,
+    const documents = chunks.map(
+      (chunk, idx) =>
+        new Document({
+          id: `${sessionID}-${idx}`,
+          pageContent: chunk,
+          metadata: { text: chunk },
+        })
+    );
+
+    console.log("Documents to store:", documents);
+
+    await PineconeStore.fromDocuments(documents, embeddings, {
+      pineconeIndex,
+      maxConcurrency: 5,
+      namespace: sessionID,
     });
 
-    if (existingEmbeddings.matches.length === 0) {
-      // Document not found, proceed with embedding and storing
-      const textSplitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 500,
-        chunkOverlap: 200,
-      });
-      const chunks = await textSplitter.splitText(pdfText);
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error("Error deleting file:", err);
+      }
+    });
 
-      const embeddings = new CohereEmbeddings({
-        apiKey: process.env.COHERE_API_KEY,
-        batchSize: 48
-      });
+    res.json({ sessionId: sessionID, message: "PDF embedded and stored successfully" });
+  } catch (error) {
+    console.error("Error embedding PDF:", error);
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error("Error deleting file:", err);
+      }
+    });
+    res.status(500).send("An error occurred while embedding the PDF.");
+  }
+});
 
-      const documents = chunks.map(
-        (chunk, idx) =>
-          new Document({
-            id: `${documentId}-${idx}`,
-            pageContent: chunk,
-            metadata: { text: chunk }, // Ensure metadata is correctly assigned
-          })
-      );
+// Endpoint to generate a response based on a stored PDF
+app.post("/generate-response", async (req, res) => {
+  const { question, sessionId, apiKey } = req.body;
 
-      // Log documents before storing
-      console.log("Documents to store:", documents);
+  try {
+    const pinecone = new Pinecone({
+      apiKey: process.env.PINECONE_API_KEY,
+    });
 
-      await PineconeStore.fromDocuments(documents, embeddings, {
-        pineconeIndex,
-        maxConcurrency: 5,
-        namespace: currentSessionId,
-      });
-    } else {
-      console.log("Document already exists in Pinecone, skipping embedding and storing.");
-    }
+    const pineconeIndex = pinecone.Index("index");
 
     const embeddings = new CohereEmbeddings({
       apiKey: process.env.COHERE_API_KEY,
-      batchSize: 48
+      batchSize: 48,
     });
 
     const questionEmbedding = await embeddings.embedQuery(question);
@@ -252,6 +264,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
       topK: 10,
       vector: questionEmbedding,
       includeMetadata: true,
+      namespace: sessionId,
     });
 
     console.log("Query Response:", queryResponse);
@@ -259,7 +272,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const relevantChunks = queryResponse.matches.map(
       (match) => match.metadata.text
     );
-
     console.log("Relevant Chunks:", relevantChunks);
 
     if (!relevantChunks.length) {
@@ -270,9 +282,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     You'll get graphs and charts sometimes, try to find them in the document.
     Sometimes you add predicted user prompts to the answer by your own,
     don't ever do that. Just give a clean answer according to the question and the context,
-    which is retrieved from the chunks .\n\n${relevantChunks.join(
-      "\n"
-    )}\n\n${conversationHistory.join(
+    which is retrieved from the chunks.\n\n${relevantChunks.join(
       "\n"
     )}\n\nQuestion: ${question}\n\nAnswer:`;
 
@@ -283,50 +293,37 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const response = await model.invoke(inputText);
     const content = response.text.trim();
-    conversationHistory.push(`Assistant: ${content}`);
-    sessionMemory[currentSessionId] = conversationHistory;
 
-    res.json({ sessionId: currentSessionId, answer: content });
+    res.json({ answer: content });
   } catch (error) {
     console.error("Error generating response:", error);
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error("Error deleting file:", err);
-      }
-    });
     res.status(500).send("An error occurred while generating the response.");
   }
 });
 
-
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const conversations = {}; // Object to store conversations based on session ID
+const conversations = {};
 
 app.post("/chat-response", async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).send("Message is required");
 
   try {
-    // Set response headers
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    // Get the current session ID or generate a new one
-    const currentSessionId = sessionID;
+    const currentSessionId = req.sessionID || uuidv4();
 
-    // Find or create the conversation based on the session ID
     let conversation = conversations[currentSessionId];
     if (!conversation) {
       conversation = { sessionId: currentSessionId, history: [] };
       conversations[currentSessionId] = conversation;
     }
 
-    // Add the user message to the conversation history
     conversation.history.push({ role: "user", text: message });
 
-    // Construct input message for the chatbot including conversation history
     let input =
       "You are a chatbot. You will answer in English or Hebrew, depending on the question language you receive.\n";
     for (const entry of conversation.history) {
@@ -334,7 +331,6 @@ app.post("/chat-response", async (req, res) => {
     }
     input += message;
 
-    // Send input to OpenAI Chat API and process the response
     const stream = await openai.chat.completions.create({
       model: "gpt-4o-2024-05-13",
       messages: [{ role: "user", content: input }],
@@ -347,16 +343,12 @@ app.post("/chat-response", async (req, res) => {
     for await (const token of stream) {
       if (token.choices[0].delta.content !== undefined) {
         assistantMessage += token.choices[0].delta.content;
-        res.write(
-          `data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`
-        );
+        res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
       }
     }
 
-    // Add the assistant message to the conversation history
     conversation.history.push({ role: "assistant", text: assistantMessage });
 
-    // Send end of stream signal
     res.write(`data: ${JSON.stringify("[DONE]")}\n\n`);
     res.end();
   } catch (error) {
