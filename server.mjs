@@ -193,7 +193,8 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const embeddings = new VoyageEmbeddings({
       apiKey: process.env.VOYAGE_API_KEY,
       model: "voyage-multilingual-2",
-      inputType: "text",
+      inputType: "document",
+      
     });
     
 
