@@ -150,6 +150,15 @@ app.post("/logout", async (req, res) => {
     const usersCollection = db.collection("users");
     const sessionsCollection = client.db("test").collection("sessions");
     const user = await usersCollection.findOne({ activeSession: sessionID });
+    const pinecone = new Pinecone({
+      apiKey: process.env.PINECONE_API_KEY,
+    });
+
+    const pineconeIndex = pinecone.Index("index");
+
+    await pineconeIndex.delete({
+      namespace: sessionID, 
+    });
 
     if (!user) return res.status(404).send("User not found");
 
@@ -216,6 +225,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
+      namespace: currentSessionId,
     });
 
     const questionEmbedding = await embeddings.embedQuery(question);
@@ -259,7 +269,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     conversationHistory.push(`Assistant: ${content}`);
     sessionMemory[currentSessionId] = conversationHistory;
 
-    pineconeIndex.deleteAll();
+    
 
     res.json({ sessionId: currentSessionId, answer: content });
   } catch (error) {
