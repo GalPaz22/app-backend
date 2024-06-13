@@ -144,6 +144,7 @@ app.get("/check-auth", (req, res) => {
 
 app.post("/logout", async (req, res) => {
   try {
+    
     const db = client.db("Cluster0");
     const usersCollection = db.collection("users");
     const sessionsCollection = client.db("test").collection("sessions");
@@ -155,9 +156,8 @@ app.post("/logout", async (req, res) => {
 
     const pineconeIndex = pinecone.Index("index");
 
-    await pineconeIndex.deleteOne(
-      { id: user._id },
-      { deleteAll: true }
+    await pineconeIndex.deleteAll()
+     
     )
 
     if (!user) return res.status(404).send("User not found");
