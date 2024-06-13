@@ -208,7 +208,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const documents = chunks.map((chunk, idx) => 
       new Document({
         id: `${currentSessionId}-${idx}`,
-        pageContent: chunk,
+        
         metadata: { text: chunk },  // Ensure metadata is correctly assigned
       })
     );
@@ -219,7 +219,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
-      
+      maxConcurrency: 5,
     });
 
     const questionEmbedding = await embeddings.embedQuery(question);
