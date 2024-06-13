@@ -219,7 +219,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
-      maxConcurrency: 5,
+      
     });
 
     const questionEmbedding = await embeddings.embedQuery(question);
