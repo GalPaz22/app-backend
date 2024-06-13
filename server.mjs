@@ -49,7 +49,7 @@ app.use(
     origin: ["https://ask-your-doc.vercel.app", "https://ask-your-doc.vercel.app/ask"], 
     credentials: true,
     optionsSuccessStatus: 200,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "sessionID", ],
     
   })
