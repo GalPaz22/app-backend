@@ -18,6 +18,7 @@ import { Document } from "@langchain/core/documents";
 import { CohereEmbeddings } from "@langchain/cohere";
 import OpenAI from "openai";
 
+const sessionID = uuidv4();
 const app = express();
 const port = 4000;
 const mongoUri = process.env.MONGO_URI;
@@ -146,7 +147,7 @@ app.post("/logout", async (req, res) => {
     const db = client.db("Cluster0");
     const usersCollection = db.collection("users");
     const sessionsCollection = client.db("test").collection("sessions");
-    const sessionID = req.sessionID;
+
     const user = await usersCollection.findOne({ activeSession: sessionID });
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
@@ -154,9 +155,10 @@ app.post("/logout", async (req, res) => {
 
     const pineconeIndex = pinecone.Index("index");
 
-    await pineconeIndex.delete({
-      namespace: sessionID,
-    });
+    await pineconeIndex.deleteOne(
+      { id: user._id },
+      { deleteAll: true }
+    )
 
     if (!user) return res.status(404).send("User not found");
 
@@ -179,7 +181,7 @@ app.post("/logout", async (req, res) => {
 // New endpoint to embed and store the document
 app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
-  const sessionID = uuidv4(); // Generate a unique session ID for this document
+ // Generate a unique session ID for this document
 
   try {
     const loader = new PDFLoader(filePath, { splitPages: false });
@@ -243,7 +245,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
 
 // Endpoint to generate a response based on a stored PDF
 app.post("/generate-response", async (req, res) => {
-  const { question, sessionId, apiKey } = req.body;
+  const { question,  apiKey } = req.body;
 
   try {
     const pinecone = new Pinecone({
@@ -264,7 +266,7 @@ app.post("/generate-response", async (req, res) => {
       topK: 10,
       vector: questionEmbedding,
       includeMetadata: true,
-      namespace: sessionId,
+      namespace: sessionID,
     });
 
     console.log("Query Response:", queryResponse);
