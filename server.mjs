@@ -170,61 +170,82 @@ app.post("/logout", async (req, res) => {
   }
 });
 
-app.post("/generate-response", upload.single("file"), async (req, res) => {
+app.post('/generate-response', upload.single('file'), async (req, res) => {
   const { question, apiKey } = req.body;
   const filePath = req.file.path;
 
   try {
-    const loader = new PDFLoader(filePath, {splitPages: false});
+    // Load and process PDF
+    const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
-    const pdfText = docs[0].pageContent;
-    const currentSessionId = sessionID 
 
+    // Check if docs is properly loaded and not empty
+    if (!docs || docs.length === 0) {
+      throw new Error('Failed to load PDF or no content found');
+    }
+
+    // Ensure pageContent exists
+    const pdfText = docs[0]?.pageContent;
+    if (!pdfText) {
+      throw new Error('PDF content is empty');
+    }
+
+    const currentSessionId = req.sessionID || uuidv4(); // Ensure sessionID is retrieved correctly
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
-    
+
+    // Split text into chunks
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
       chunkOverlap: 200,
     });
     const chunks = await textSplitter.splitText(pdfText);
-    
-    
-    const embeddings = new VoyageEmbeddings({
-      apiKey: process.env.VOYAGE_API_KEY,
-      model: "voyage-multilingual-2",
-      inputType: "document",
-      
-    });
-    
 
-    
-    const pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY,
+    // Embed chunks using VoyageEmbeddings
+    const embeddings = new VoyageEmbeddings({
+      apiKey: process.env.VOYAGE_API_KEY, // Ensure this is correctly set
+      model: 'voyage-multilingual-2',
+      inputType: 'document',
     });
-    
-    const pineconeIndex = pinecone.Index("index");
-    
-    const documents = chunks.map((chunk, idx) => 
+
+    // Check if embeddings are correctly initialized
+    if (!embeddings) {
+      throw new Error('Failed to initialize VoyageEmbeddings');
+    }
+
+    // Initialize Pinecone
+    const pinecone = new Pinecone({
+      apiKey: process.env.PINECONE_API_KEY, // Ensure this is correctly set
+    });
+    const pineconeIndex = pinecone.Index('index');
+
+    // Map chunks to Document format and store them in Pinecone
+    const documents = chunks.map((chunk, idx) =>
       new Document({
         id: `${currentSessionId}-${idx}`,
-        
-        metadata: { text: chunk },  // Ensure metadata is correctly assigned
+        pageContent: chunk,
+        metadata: { text: chunk },
       })
     );
 
-    // Log documents before storing
     console.log('Documents to store:', documents);
-    
 
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
     });
 
+    // Embed the question
     const questionEmbedding = await embeddings.embedQuery(question);
+
+    // Check if the question embedding is successful
+    if (!questionEmbedding) {
+      throw new Error('Failed to embed the question');
+    }
+    
     console.log('Question Embedding:', questionEmbedding);
 
+    // Query Pinecone
     const queryResponse = await pineconeIndex.query({
       topK: 10,
       vector: questionEmbedding,
@@ -233,27 +254,28 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     console.log('Query Response:', queryResponse);
 
+    // Extract relevant chunks
     const relevantChunks = queryResponse.matches.map((match) => match.metadata.text);
-    console.log(match);
     console.log('Relevant Chunks:', relevantChunks);
 
     if (!relevantChunks.length) {
-      throw new Error("No relevant chunks retrieved from Pinecone");
+      throw new Error('No relevant chunks retrieved from Pinecone');
     }
 
+    // Prepare input for ChatAnthropic model
     const inputText = `Answer in the same language you got in your PDF context, in detail. 
     You'll get graphs and charts sometimes, try to find them in the document.
     Sometimes you add predicted user prompts to the answer by your own,
     don't ever do that. Just give a clean answer according to the question and the context,
     which is retrieved from the chunks .\n\n${relevantChunks.join(
-      "\n"
+      '\n'
     )}\n\n${conversationHistory.join(
-      "\n"
+      '\n'
     )}\n\nQuestion: ${question}\n\nAnswer:`;
 
     const model = new ChatAnthropic({
       apiKey: apiKey,
-      model: "claude-3-sonnet-20240229",
+      model: 'claude-3-sonnet-20240229',
     });
 
     const response = await model.invoke(inputText);
@@ -261,17 +283,18 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     conversationHistory.push(`Assistant: ${content}`);
     sessionMemory[currentSessionId] = conversationHistory;
 
-   pineconeIndex.deleteAll();
+    // Clean up Pinecone index
+    pineconeIndex.deleteAll();
 
     res.json({ sessionId: currentSessionId, answer: content });
   } catch (error) {
-    console.error("Error generating response:", error);
+    console.error('Error generating response:', error);
     fs.unlink(filePath, (err) => {
       if (err) {
-        console.error("Error deleting file:", err);
+        console.error('Error deleting file:', err);
       }
     });
-    res.status(500).send("An error occurred while generating the response.");
+    res.status(500).send('An error occurred while generating the response.');
   }
 });
 
