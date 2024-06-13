@@ -102,7 +102,7 @@ app.post("/login", async (req, res) => {
       }
     }
 
-    const sessionID = uuidv4();
+
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
     await usersCollection.updateOne(
       { _id: user._id },
