@@ -216,15 +216,9 @@ app.post('/generate-response', upload.single('file'), async (req, res) => {
     const pineconeIndex = pinecone.Index('index');
 
     // Map chunks to Document format and store them in Pinecone
-    const documents = chunks.map((chunk, idx) =>
-      new Document({
-        id: `${currentSessionId}-${idx}`,
-        pageContent: chunk,
-        metadata: { text: chunk },
-      })
-    );
+  
 
-    console.log('Documents to store:', documents);
+
 
     await PineconeStore.fromDocuments(pdfText, embeddings, {
       pineconeIndex,
