@@ -181,28 +181,16 @@ app.post("/logout", async (req, res) => {
 app.post("/generate-response", upload.single("file"), async (req, res) => {
   const { question, apiKey } = req.body;
   const filePath = req.file.path;
+  const currentSessionId = sessionID;
 
   try {
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
     const pdfText = docs[0].pageContent;
-    const currentSessionId = sessionID;
+    const documentId = `${currentSessionId}-document`; // Unique identifier for the document
 
     const conversationHistory = sessionMemory[currentSessionId] || [];
     conversationHistory.push(`User: ${question}`);
-
-    const textSplitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 500,
-      chunkOverlap: 200,
-    });
-    const chunks = await textSplitter.splitText(pdfText);
-
-    const embeddings = new CohereEmbeddings({
-      apiKey: process.env.COHERE_API_KEY,
-      batchSize: 48
-    });
-
-
 
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
@@ -210,22 +198,51 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
 
     const pineconeIndex = pinecone.Index("index");
 
-    const documents = chunks.map(
-      (chunk, idx) =>
-        new Document({
-          id: `${currentSessionId}-${idx}`,
-          pageContent: chunk,
-          metadata: { text: chunk }, // Ensure metadata is correctly assigned
-        })
-    );
+    // Check if the document already exists in Pinecone
+    const existingEmbeddings = await pineconeIndex.query({
+      vector: [0], // Dummy vector since we only want to match the ID
+      filter: { id: documentId },
+      topK: 1,
+      includeMetadata: true,
+    });
 
-    // Log documents before storing
-    console.log("Documents to store:", documents);
+    if (existingEmbeddings.matches.length === 0) {
+      // Document not found, proceed with embedding and storing
+      const textSplitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 500,
+        chunkOverlap: 200,
+      });
+      const chunks = await textSplitter.splitText(pdfText);
 
-    await PineconeStore.fromDocuments(documents, embeddings, {
-      pineconeIndex,
-      maxConcurrency: 5,
-      namespace: currentSessionId,
+      const embeddings = new CohereEmbeddings({
+        apiKey: process.env.COHERE_API_KEY,
+        batchSize: 48
+      });
+
+      const documents = chunks.map(
+        (chunk, idx) =>
+          new Document({
+            id: `${documentId}-${idx}`,
+            pageContent: chunk,
+            metadata: { text: chunk }, // Ensure metadata is correctly assigned
+          })
+      );
+
+      // Log documents before storing
+      console.log("Documents to store:", documents);
+
+      await PineconeStore.fromDocuments(documents, embeddings, {
+        pineconeIndex,
+        maxConcurrency: 5,
+        namespace: currentSessionId,
+      });
+    } else {
+      console.log("Document already exists in Pinecone, skipping embedding and storing.");
+    }
+
+    const embeddings = new CohereEmbeddings({
+      apiKey: process.env.COHERE_API_KEY,
+      batchSize: 48
     });
 
     const questionEmbedding = await embeddings.embedQuery(question);
@@ -242,7 +259,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const relevantChunks = queryResponse.matches.map(
       (match) => match.metadata.text
     );
-    
+
     console.log("Relevant Chunks:", relevantChunks);
 
     if (!relevantChunks.length) {
@@ -269,8 +286,6 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     conversationHistory.push(`Assistant: ${content}`);
     sessionMemory[currentSessionId] = conversationHistory;
 
-    
-
     res.json({ sessionId: currentSessionId, answer: content });
   } catch (error) {
     console.error("Error generating response:", error);
@@ -282,6 +297,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     res.status(500).send("An error occurred while generating the response.");
   }
 });
+
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
