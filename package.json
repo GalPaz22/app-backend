@@ -15,6 +15,7 @@
   "dependencies": {
     "@huggingface/inference": "^2.7.0",
     "@langchain/anthropic": "^0.1.21",
+    "@langchain/cohere": "^0.1.0",
     "@langchain/community": "^0.2.9",
     "@langchain/openai": "^0.1.1",
     "@langchain/pinecone": "^0.0.7",
@@ -25,6 +26,7 @@
     "body-parser": "^1.20.2",
     "chromadb": "^1.8.1",
     "chromadb-default-embed": "^2.13.2",
+    "cohere-ai": "^7.10.5",
     "concurrently": "^8.2.2",
     "connect-mongo": "^5.1.0",
     "connect-session-sequelize": "^7.1.7",
