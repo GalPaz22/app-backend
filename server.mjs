@@ -18,6 +18,7 @@ import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { match } from "assert";
 import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
+import { Pipeline, pipeline } from "@xenova/transformers";
 
 
 
@@ -193,11 +194,10 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const chunks = await textSplitter.splitText(pdfText);
     
     
-    const embeddings = new HuggingFaceTransformersEmbeddings({
-      model: "Xenova/all-MiniLM-L6-v2",
-   
-      
-    });
+    const embeddings = await pipeline(
+    'feature-extraction',
+   'Xenova/all-MiniLM-L6-v2'
+    );
     
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
@@ -217,12 +217,12 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     console.log('Documents to store:', documents);
     
 
-    await PineconeStore.fromDocuments(documents, embeddings, {
+    await PineconeStore.fromDocuments(documents, await embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
     });
 
-    const questionEmbedding = await embeddings.embedQuery(question);
+    const questionEmbedding = await embeddings(question);
     console.log('Question Embedding:', questionEmbedding);
 
     const queryResponse = await pineconeIndex.query({
