@@ -54,6 +54,7 @@ app.use(
     
   })
 );
+app.options("*", cors());
 
 app.use(
   session({
@@ -194,6 +195,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     
     const embeddings = new HuggingFaceTransformersEmbeddings({
       model: "Xenova/all-MiniLM-L6-v2",
+   
       
     });
     
