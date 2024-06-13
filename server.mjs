@@ -201,7 +201,7 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     });
     
     const pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY,
+      apiKey: apiKey
     });
     
     const pineconeIndex = pinecone.Index("index");
