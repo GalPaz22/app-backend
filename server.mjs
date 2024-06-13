@@ -194,10 +194,10 @@ app.post("/generate-response", upload.single("file"), async (req, res) => {
     const chunks = await textSplitter.splitText(pdfText);
     
     
-    const embeddings = await pipeline(
-    'feature-extraction',
-   'Xenova/all-MiniLM-L6-v2'
-    );
+    const embeddings = new OpenAIEmbeddings({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: "text-embedding-3-small",
+    });
     
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
