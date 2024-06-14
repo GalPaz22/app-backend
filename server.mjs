@@ -158,7 +158,7 @@ app.post("/logout", async (req, res) => {
 
     await pineconeIndex.deleteAll()
      
-    )
+    
 
     if (!user) return res.status(404).send("User not found");
 
