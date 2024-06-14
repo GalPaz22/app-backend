@@ -245,7 +245,6 @@ app.post("/generate-response", async (req, res) => {
 
   try {
 
-
     const embeddings = new CohereEmbeddings({
       apiKey: process.env.COHERE_API_KEY,
       batchSize: 48,
@@ -256,9 +255,9 @@ app.post("/generate-response", async (req, res) => {
 
     const queryResponse = await pineconeIndex.query({
       topK: 10,
-      includeMetadata: true,
       id: sessionID,
-      vector: questionEmbedding,
+
+      
     });
 
     console.log("Query Response:", queryResponse);
