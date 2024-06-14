@@ -150,6 +150,15 @@ app.post("/logout", async (req, res) => {
     const sessionsCollection = client.db("test").collection("sessions");
 
     const user = await usersCollection.findOne({ activeSession: sessionID });
+    const pinecone = new Pinecone({
+      apiKey: process.env.PINECONE_API_KEY,
+    });
+
+    const pineconeIndex = pinecone.Index("index");
+
+    await pineconeIndex.deleteOne({
+      id: user._id,
+    });
 
      
     
