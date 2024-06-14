@@ -156,10 +156,8 @@ app.post("/logout", async (req, res) => {
 
     const pineconeIndex = pinecone.Index("index");
 
-    await pineconeIndex.deleteOne({
-      id: user._id,
-    });
-
+    await pineconeIndex.deleteAll({
+      namespace: sessionID,});
      
     
 
