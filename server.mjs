@@ -18,6 +18,12 @@ import { Document } from "@langchain/core/documents";
 import { CohereEmbeddings } from "@langchain/cohere";
 import OpenAI from "openai";
 
+const pinecone = new Pinecone({
+  apiKey: process.env.PINECONE_API_KEY,
+});
+
+const pineconeIndex = pinecone.Index("index");
+
 const sessionID = uuidv4();
 const app = express();
 const port = 4000;
@@ -150,15 +156,8 @@ app.post("/logout", async (req, res) => {
     const sessionsCollection = client.db("test").collection("sessions");
 
     const user = await usersCollection.findOne({ activeSession: sessionID });
-    const pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY,
-    });
-
-    const pineconeIndex = pinecone.Index("index");
-
-    await pineconeIndex.deleteAll({
-      namespace: sessionID,});
-     
+    
+    await pineconeIndex.deleteMany({ id: sessionID });
     
 
     if (!user) return res.status(404).send("User not found");
@@ -203,16 +202,12 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
       batchSize: 48,
     });
 
-    const pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY,
-    });
-
-    const pineconeIndex = pinecone.Index("index");
+   
 
     const documents = chunks.map(
-      (chunk, idx) =>
+      (chunk) =>
         new Document({
-          id: `${sessionID}-${idx}`,
+          id: `${sessionID}`,
           pageContent: chunk,
           metadata: { text: chunk },
         })
@@ -249,11 +244,7 @@ app.post("/generate-response", async (req, res) => {
   const { question,  apiKey } = req.body;
 
   try {
-    const pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY,
-    });
 
-    const pineconeIndex = pinecone.Index("index");
 
     const embeddings = new CohereEmbeddings({
       apiKey: process.env.COHERE_API_KEY,
@@ -266,7 +257,8 @@ app.post("/generate-response", async (req, res) => {
     const queryResponse = await pineconeIndex.query({
       topK: 10,
       includeMetadata: true,
-      namespace: sessionID,
+      id: sessionID,
+      vector: questionEmbedding,
     });
 
     console.log("Query Response:", queryResponse);
