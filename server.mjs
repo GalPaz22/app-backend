@@ -168,7 +168,7 @@ app.post("/logout", async (req, res) => {
         { $unset: { activeSession: "" } }
       );
 
-      await sessionsCollection.deleteOne({ sessionID });
+      await sessionsCollection.deleteOne({ activeSession: sessionID });
 
       res.send("Logout successful");
     }
