@@ -255,9 +255,10 @@ app.post("/generate-response", async (req, res) => {
 
     const queryResponse = await pineconeIndex.query({
       topK: 10,
-      id: sessionID,
+     vector: questionEmbedding,
+     namespace: sessionID,
 
-      
+
     });
 
     console.log("Query Response:", queryResponse);
