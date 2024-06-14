@@ -218,7 +218,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
-      namespace: sessionID,
+    
     });
 
     fs.unlink(filePath, (err) => {
@@ -254,7 +254,7 @@ app.post("/generate-response", async (req, res) => {
     console.log("Question Embedding:", questionEmbedding);
 
     const queryResponse = await pineconeIndex.query({
-      topK: 10,
+      topK: 5,
       vector: questionEmbedding,
       includeMetadata: true,
 
