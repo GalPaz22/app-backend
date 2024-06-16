@@ -179,8 +179,10 @@ app.post("/logout", async (req, res) => {
 app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
   
- pineNamespace.describeIndexStats();
-
+ const namespaces = pineNamespace.describeIndexStats();
+if (namespaces.length > 0) {
+  pineNamespace.deleteAll();
+}
  
 
   try {
