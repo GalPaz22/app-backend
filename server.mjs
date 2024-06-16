@@ -178,6 +178,7 @@ app.post("/logout", async (req, res) => {
 // New endpoint to embed and store the document
 app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
+  await pineNamespace.deleteAll();
  
 
   try {
@@ -199,10 +200,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
       batchSize: 48,
     });
 
-    await PineconeStore.delete({
-      pineconeIndex,
-      namespace: sessionID,
-    })
+  
 
 
     const documents = chunks.map(
