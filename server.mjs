@@ -215,13 +215,13 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
               
               console.log("Documents to store:", documents);
               
+              await pineNamespace.deleteAll();
               await PineconeStore.fromDocuments(documents, embeddings, {
                 pineconeIndex,
                 maxConcurrency: 5,
                 namespace: sessionID,
                 });
                 
-                await pineNamespace.deleteAll();
     fs.unlink(filePath, (err) => {
       if (err) {
         console.error("Error deleting file:", err);
