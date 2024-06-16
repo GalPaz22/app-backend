@@ -212,7 +212,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
 
     console.log("Documents to store:", documents);
 
-    await pineNamespace.upsert(documents, embeddings, {
+    await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
       namespace: sessionID,
@@ -284,6 +284,7 @@ app.post("/generate-response", async (req, res) => {
 
     const response = await model.invoke(inputText);
     const content = response.text.trim();
+    await pineNamespace.deleteAll()
 
     res.json({ answer: content });
   } catch (error) {
