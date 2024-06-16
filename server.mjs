@@ -182,11 +182,8 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   
   
   try {
-    const namespaces = await pineconeIndex.describeIndexStats();
-    console.log(namespaces);
-   if (namespaces.namespace== sessionID) {
-     await pineconeIndex.deleteAll();
-   }
+    
+   await pineNamespace.deleteAll();
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
     if (!docs || docs.length === 0 || !docs[0].pageContent) {
