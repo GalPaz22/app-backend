@@ -13,11 +13,11 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import MongoStore from "connect-mongo";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Pinecone } from "@pinecone-database/pinecone";
-import { PineconeStore,   } from "@langchain/pinecone";
+import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { CohereEmbeddings } from "@langchain/cohere";
 import OpenAI from "openai";
-
+import { DeleteRequestFromJSON } from "@pinecone-database/pinecone/dist/pinecone-generated-ts-fetch";
 
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
@@ -157,8 +157,6 @@ app.post("/logout", async (req, res) => {
 
     const user = await usersCollection.findOne({ activeSession: sessionID });
 
-   
-
     if (!user) return res.status(404).send("User not found");
 
     if (user.activeSession) {
@@ -183,16 +181,6 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const sessionID = generateUniqueSessionID(); // Replace with your unique session ID generator
 
   try {
-    const pinecone = new Pinecone({
-      apiKey: process.env.PINECONE_API_KEY,
-    });
-    
-    
-    const pineconeIndex = pinecone.Index("index");
-
-    // Delete the old namespace
-    await pineconeIndex.deleteAll( namespace= sessionID );
-
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
     if (!docs || docs.length === 0 || !docs[0].pageContent) {
@@ -210,6 +198,12 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
       apiKey: process.env.COHERE_API_KEY,
       batchSize: 48,
     });
+
+    await PineconeStore.delete({
+      pineconeIndex,
+      namespace: sessionID,
+    })
+
 
     const documents = chunks.map(
       (chunk) =>
@@ -294,7 +288,6 @@ app.post("/generate-response", async (req, res) => {
 
     const response = await model.invoke(inputText);
     const content = response.text.trim();
- 
 
     res.json({ answer: content });
   } catch (error) {
