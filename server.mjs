@@ -178,7 +178,7 @@ app.post("/logout", async (req, res) => {
 // New endpoint to embed and store the document
 app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
-  if(pineNamespace){ 
+  if(pineNamespace!= 'undefined'){ 
     await pineconeIndex.deleteAll()
   }
 
