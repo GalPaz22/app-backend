@@ -182,7 +182,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   
   
   try {
-    const namespaces = pineNamespace.describeIndexStats();
+    const namespaces = pineconeIndex.describeIndexStats();
     console.log(namespaces);
    if (namespaces.namespace== sessionID) {
      await pineconeIndex.deleteAll();
