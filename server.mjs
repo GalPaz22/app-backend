@@ -310,7 +310,7 @@ app.post("/chat-response", async (req, res) => {
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    const currentSessionId = req.sessionID || uuidv4();
+    const currentSessionId = sessionID;
 
     let conversation = conversations[currentSessionId];
     if (!conversation) {
