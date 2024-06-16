@@ -178,7 +178,7 @@ app.post("/logout", async (req, res) => {
 // New endpoint to embed and store the document
 app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
-  const sessionID = generateUniqueSessionID(); // Replace with your unique session ID generator
+ 
 
   try {
     const loader = new PDFLoader(filePath, { splitPages: false });
