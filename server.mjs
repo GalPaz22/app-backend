@@ -179,13 +179,13 @@ app.post("/logout", async (req, res) => {
 app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
   
- const namespaces = pineNamespace.describeIndexStats();
-if (namespaces.length > 0) {
-  pineNamespace.deleteAll();
-}
- 
-
+  
+  
   try {
+    const namespaces = pineNamespace.describeIndexStats();
+   if (namespaces.length > 0) {
+     pineNamespace.deleteAll();
+   }
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
     if (!docs || docs.length === 0 || !docs[0].pageContent) {
