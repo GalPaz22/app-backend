@@ -183,67 +183,67 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   
   try {
     
-   await pineNamespace.deleteAll();
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
     if (!docs || docs.length === 0 || !docs[0].pageContent) {
       throw new Error("Failed to load PDF or no content found");
-    }
+      }
     const pdfText = docs[0].pageContent;
-
+    
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
       chunkOverlap: 200,
-    });
-    const chunks = await textSplitter.splitText(pdfText);
-
-    const embeddings = new CohereEmbeddings({
-      apiKey: process.env.COHERE_API_KEY,
-      batchSize: 48,
-    });
-
-  
-
-
-    const documents = chunks.map(
-      (chunk) =>
-        new Document({
-          id: sessionID,
-          pageContent: chunk,
-          metadata: { text: chunk },
-        })
-    );
-
-    console.log("Documents to store:", documents);
-
-    await PineconeStore.fromDocuments(documents, embeddings, {
-      pineconeIndex,
-      maxConcurrency: 5,
-      namespace: sessionID,
-    });
-
+      });
+      const chunks = await textSplitter.splitText(pdfText);
+      
+      const embeddings = new CohereEmbeddings({
+        apiKey: process.env.COHERE_API_KEY,
+        batchSize: 48,
+        });
+        
+        
+        
+        
+        const documents = chunks.map(
+          (chunk) =>
+            new Document({
+              id: sessionID,
+              pageContent: chunk,
+              metadata: { text: chunk },
+              })
+              );
+              
+              console.log("Documents to store:", documents);
+              
+              await PineconeStore.fromDocuments(documents, embeddings, {
+                pineconeIndex,
+                maxConcurrency: 5,
+                namespace: sessionID,
+                });
+                
+                await pineNamespace.deleteAll();
     fs.unlink(filePath, (err) => {
       if (err) {
         console.error("Error deleting file:", err);
-      }
-    });
-
-    res.json({
-      sessionId: sessionID,
-      message: "PDF embedded and stored successfully",
-    });
-  } catch (error) {
-    console.error("Error embedding PDF:", error);
-    fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error("Error deleting file:", err);
-      }
-    });
-    res.status(500).send("An error occurred while embedding the PDF.");
-  }
-});
-
-// Endpoint to generate a response based on a stored PDF
+        }
+        });
+        
+        res.json({
+          sessionId: sessionID,
+          message: "PDF embedded and stored successfully",
+          });
+          } catch (error) {
+            console.error("Error embedding PDF:", error);
+            fs.unlink(filePath, (err) => {
+              if (err) {
+                console.error("Error deleting file:", err);
+                }
+                });
+                res.status(500).send("An error occurred while embedding the PDF.");
+                }
+                });
+                
+                // Endpoint to generate a response based on a stored PDF
 app.post("/generate-response", async (req, res) => {
   const { question, apiKey } = req.body;
 
