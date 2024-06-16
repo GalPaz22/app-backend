@@ -22,10 +22,10 @@ const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
 });
 
+const sessionID = uuidv4();
 const pineconeIndex = pinecone.Index("index");
 const pineNamespace = pineconeIndex.namespace(sessionID);
 
-const sessionID = uuidv4();
 const app = express();
 const port = 4000;
 const mongoUri = process.env.MONGO_URI;
