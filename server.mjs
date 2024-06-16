@@ -23,6 +23,7 @@ const pinecone = new Pinecone({
 });
 
 const pineconeIndex = pinecone.Index("index");
+const pineNamespace = pineconeIndex.namespace(sessionID);
 
 const sessionID = uuidv4();
 const app = express();
@@ -108,7 +109,6 @@ app.post("/login", async (req, res) => {
       }
     }
 
-
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
     await usersCollection.updateOne(
       { _id: user._id },
@@ -150,15 +150,13 @@ app.get("/check-auth", (req, res) => {
 
 app.post("/logout", async (req, res) => {
   try {
-    
     const db = client.db("Cluster0");
     const usersCollection = db.collection("users");
     const sessionsCollection = client.db("test").collection("sessions");
 
     const user = await usersCollection.findOne({ activeSession: sessionID });
-    
-    await pineconeIndex.deleteMany({ id: sessionID });
-    
+
+    await pineNamespace.deleteAll();
 
     if (!user) return res.status(404).send("User not found");
 
@@ -181,7 +179,7 @@ app.post("/logout", async (req, res) => {
 // New endpoint to embed and store the document
 app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
- // Generate a unique session ID for this document
+  // Generate a unique session ID for this document
 
   try {
     const loader = new PDFLoader(filePath, { splitPages: false });
@@ -202,8 +200,6 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
       batchSize: 48,
     });
 
-   
-
     const documents = chunks.map(
       (chunk) =>
         new Document({
@@ -218,7 +214,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
     await PineconeStore.fromDocuments(documents, embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
-    
+      namespace: sessionID,
     });
 
     fs.unlink(filePath, (err) => {
@@ -227,7 +223,10 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
       }
     });
 
-    res.json({ sessionId: sessionID, message: "PDF embedded and stored successfully" });
+    res.json({
+      sessionId: sessionID,
+      message: "PDF embedded and stored successfully",
+    });
   } catch (error) {
     console.error("Error embedding PDF:", error);
     fs.unlink(filePath, (err) => {
@@ -241,10 +240,9 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
 
 // Endpoint to generate a response based on a stored PDF
 app.post("/generate-response", async (req, res) => {
-  const { question,  apiKey } = req.body;
+  const { question, apiKey } = req.body;
 
   try {
-
     const embeddings = new CohereEmbeddings({
       apiKey: process.env.COHERE_API_KEY,
       batchSize: 48,
@@ -253,11 +251,10 @@ app.post("/generate-response", async (req, res) => {
     const questionEmbedding = await embeddings.embedQuery(question);
     console.log("Question Embedding:", questionEmbedding);
 
-    const queryResponse = await pineconeIndex.query({
+    const queryResponse = await pineNamespace.query({
       topK: 5,
       vector: questionEmbedding,
       includeMetadata: true,
-
     });
 
     console.log("Query Response:", queryResponse);
@@ -336,7 +333,9 @@ app.post("/chat-response", async (req, res) => {
     for await (const token of stream) {
       if (token.choices[0].delta.content !== undefined) {
         assistantMessage += token.choices[0].delta.content;
-        res.write(`data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`);
+        res.write(
+          `data: ${JSON.stringify(token.choices[0].delta.content)}\n\n`
+        );
       }
     }
 
