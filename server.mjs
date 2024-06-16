@@ -156,7 +156,7 @@ app.post("/logout", async (req, res) => {
 
     const user = await usersCollection.findOne({ activeSession: sessionID });
 
-    await pineNamespace.deleteAll({deleteAll: true}); 
+   
 
     if (!user) return res.status(404).send("User not found");
 
@@ -182,7 +182,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   // Generate a unique session ID for this document
 
   try {
-   
+    await pineNamespace.deleteAll()
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
     if (!docs || docs.length === 0 || !docs[0].pageContent) {
