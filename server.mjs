@@ -200,6 +200,8 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
       apiKey: process.env.COHERE_API_KEY,
       batchSize: 48,
     });
+    pineconeIndex.describeIndexStats();
+    pineconeIndex.deleteAll( namespace= sessionID );
 
     const documents = chunks.map(
       (chunk) =>
@@ -284,7 +286,7 @@ app.post("/generate-response", async (req, res) => {
 
     const response = await model.invoke(inputText);
     const content = response.text.trim();
-    await pineNamespace.deleteAll()
+ 
 
     res.json({ answer: content });
   } catch (error) {
