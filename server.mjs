@@ -183,8 +183,8 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   
   try {
     const namespaces = pineNamespace.describeIndexStats();
-   if (namespaces.length > 0) {
-     pineNamespace.deleteAll();
+   if (namespaces.namespace== sessionID) {
+     await pineconeIndex.deleteAll();
    }
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
