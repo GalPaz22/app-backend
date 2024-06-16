@@ -17,7 +17,7 @@ import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { CohereEmbeddings } from "@langchain/cohere";
 import OpenAI from "openai";
-import { DeleteRequestFromJSON } from "@pinecone-database/pinecone/dist/pinecone-generated-ts-fetch";
+
 
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
