@@ -212,7 +212,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
 
     console.log("Documents to store:", documents);
 
-    await PineconeStore.fromDocuments(documents, embeddings, {
+    await pineNamespace.upsert(documents, embeddings, {
       pineconeIndex,
       maxConcurrency: 5,
       namespace: sessionID,
