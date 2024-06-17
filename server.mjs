@@ -241,7 +241,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
         });
         
         res.json({
-          sessionId: sessionID,
+      
           message: "PDF embedded and stored successfully",
           });
           } catch (error) {
