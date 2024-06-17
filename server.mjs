@@ -17,7 +17,6 @@ import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { CohereEmbeddings } from "@langchain/cohere";
 import OpenAI from "openai";
-import { OpenAIEmbeddings } from "@langchain/openai";
 
 
 const pinecone = new Pinecone({
@@ -211,9 +210,9 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
       });
       const chunks = await textSplitter.splitText(pdfText);
       
-      const embeddings = new OpenAIEmbeddings({
-        apiKey: process.env.OPENAI_API_KEY,
-
+      const embeddings = new CohereEmbeddings({
+        apiKey: process.env.COHERE_API_KEY,
+        batchSize: 48,
         });
       
         
@@ -261,8 +260,9 @@ app.post("/generate-response", async (req, res) => {
   const { question, apiKey } = req.body;
 
   try {
-    const embeddings = new OpenAIEmbeddings({
-      apiKey: process.env.OPENAI_API_KEY,
+    const embeddings = new CohereEmbeddings({
+      apiKey: process.env.COHERE_API_KEY,
+      batchSize: 48,
     });
 
     const questionEmbedding = await embeddings.embedQuery(question);
