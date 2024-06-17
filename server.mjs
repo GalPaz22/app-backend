@@ -187,7 +187,11 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
     });
     
     const pineconeIndex = pinecone.Index("index");
-    await pineconeIndex.namespace(sessionID).deleteAll();
+    
+   const indexStats = await pineconeIndex.describeIndexStats();
+    if (indexStats.namespaces && indexStats.namespaces.includes(sessionID)) {
+      // Delete the namespace
+      await pineconeIndex.deleteAll({ namespace: namespaceId })}
     
     
     const loader = new PDFLoader(filePath, { splitPages: false });
@@ -207,9 +211,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
         apiKey: process.env.COHERE_API_KEY,
         batchSize: 48,
         });
-        
-        
-        
+      
         
         const documents = chunks.map(
           (chunk) =>
