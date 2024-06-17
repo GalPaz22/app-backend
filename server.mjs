@@ -211,6 +211,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
       const chunks = await textSplitter.splitText(pdfText);
       
       const embeddings = new OpenAIEmbeddings({
+        model: "text-embedding-3-large",
         apiKey: process.env.OPENAI_API_KEY,
         });
       
@@ -260,6 +261,7 @@ app.post("/generate-response", async (req, res) => {
 
   try {
     const embeddings = new OpenAIEmbeddings({
+      model: "text-embedding-3-large",
       apiKey: process.env.OPENAI_API_KEY,
     });
 
