@@ -189,9 +189,9 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
     const pineconeIndex = pinecone.Index("index");
     
    const indexStats = await pineconeIndex.describeIndexStats();
-    if (indexStats.namespaces && indexStats.namespaces.includes(sessionID)) {
+    if (indexStats.namespaces(sessionID)) {
       // Delete the namespace
-      await pineconeIndex.deleteAll({ namespace: namespaceId })}
+      await pineconeIndex.deleteAll()
     
     
     const loader = new PDFLoader(filePath, { splitPages: false });
