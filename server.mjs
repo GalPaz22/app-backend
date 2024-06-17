@@ -182,6 +182,13 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   
   
   try {
+    const pinecone = new Pinecone({
+      apiKey: process.env.PINECONE_API_KEY,
+    });
+    
+    const pineconeIndex = pinecone.Index("index");
+    await pineconeIndex.namespace(sessionID).deleteAll();
+    
     
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
@@ -215,7 +222,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
               
               console.log("Documents to store:", documents);
               
-              await pineNamespace.deleteAll();
+              
               await PineconeStore.fromDocuments(documents, embeddings, {
                 pineconeIndex,
                 maxConcurrency: 5,
