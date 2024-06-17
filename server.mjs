@@ -219,7 +219,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
         const documents = chunks.map(
           (chunk) =>
             new Document({
-              id: sessionID,
+              id: uuidv4(),
               pageContent: chunk,
               metadata: { text: chunk },
               })
