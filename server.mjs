@@ -269,7 +269,7 @@ app.post("/generate-response", async (req, res) => {
     console.log("Question Embedding:", questionEmbedding);
 
     const queryResponse = await pineNamespace.query({
-      topK: 5,
+      topK: 10,
       vector: questionEmbedding,
       includeMetadata: true,
     });
