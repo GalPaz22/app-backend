@@ -294,7 +294,7 @@ app.post("/generate-response", async (req, res) => {
     )}\n\nQuestion: ${question}\n\nAnswer:`;
 
     const model = new ChatAnthropic({
-      apiKey: apiKey,
+      apiKey: process.env.ANTHROPIC_API_KEY,
       model: "claude-3-sonnet-20240229",
     });
 
