@@ -134,6 +134,7 @@ app.get("/check-auth", (req, res) => {
   const authHeader = req.headers["authorization"];
   const db = client.db("Cluster0");
   const usersCollection = db.collection("users");
+
   if (!authHeader) {
     return res.status(401).json({ authenticated: false });
   }
@@ -166,7 +167,7 @@ app.post("/logout", async (req, res) => {
         { $unset: { activeSession: "" } }
       );
 
-      await sessionsCollection.deleteOne({ activeSession: sessionID });
+      await sessionsCollection.deleteOne({ sessionID: sessionID });
 
       res.send("Logout successful");
     }
@@ -189,10 +190,10 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
     
     const pineconeIndex = pinecone.Index("index");
     
-   const indexStats = await pineconeIndex.namespace(sessionID).describeIndexStats();
+   const indexStats = await pineNamespace.describeIndexStats();
     if (indexStats.totalRecordCount > 0) {
       // Delete all vectors
-      await pineconeIndex.namespace(sessionID).deleteAll();
+      await pineNamespace.deleteAll();
     }
 
     
@@ -241,7 +242,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
         });
         
         res.json({
-      
+          sessionID: sessionID,
           message: "PDF embedded and stored successfully",
           });
           } catch (error) {
