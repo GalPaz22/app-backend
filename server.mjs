@@ -26,7 +26,7 @@ const pinecone = new Pinecone({
 
 const sessionID = uuidv4();
 const pineconeIndex = pinecone.Index("index");
-const pineNamespace = pineconeIndex.namespace(sessionID);
+
 
 const app = express();
 const port = 4000;
@@ -182,16 +182,14 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
   const { sessionId } = req.body;
 
-
-  
-  
-  
   try {
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
     });
     
     const pineconeIndex = pinecone.Index("index");
+
+    const pineNamespace = pinecone.Index(sessionId);
     
    const indexStats = await pineNamespace.describeIndexStats();
     if (indexStats.totalRecordCount > 0) {
