@@ -180,6 +180,9 @@ app.post("/logout", async (req, res) => {
 // New endpoint to embed and store the document
 app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
+  const { sessionId } = req.body;
+
+
   
   
   
@@ -232,7 +235,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
               await PineconeStore.fromDocuments(documents, embeddings, {
                 pineconeIndex,
                 maxConcurrency: 5,
-                namespace: sessionID,
+                namespace: sessionId,
                 });
                 
     fs.unlink(filePath, (err) => {
