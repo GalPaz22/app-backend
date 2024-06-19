@@ -79,7 +79,7 @@ const upload = multer({ dest: "uploads/" });
 const sessionMemory = {};
 
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, sessionId } = req.body;
   if (!email || !password)
     return res.status(400).send("Email and password are required");
 
@@ -114,7 +114,7 @@ app.post("/login", async (req, res) => {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
     await usersCollection.updateOne(
       { _id: user._id },
-      { $set: { activeSession: sessionID } }
+      { $set: { activeSession: sessionId } }
     );
 
     await sessionsCollection.insertOne({
