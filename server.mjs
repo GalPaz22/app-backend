@@ -187,7 +187,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
 
     const pineconeIndex = pinecone.Index("index");
 
-    const pineNamespace = pinecone.Namespace(sessionId);
+    const pineNamespace = pineconeIndex.namespace(sessionId);
 
     const indexStats = await pineNamespace.describeIndexStats();
     if (indexStats.totalRecordCount > 0) {
