@@ -186,7 +186,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
     });
 
     const pineconeIndex = pinecone.Index("index");
-    const pineNamespace = pinecone.Index(sessionId);
+    const pineNamespace = pineconeIndex.namespace(sessionId);
     if (pineNamespace) {
       console.log("Pinecone namespace found:", pineNamespace);
       pineNamespace.deleteAll();
