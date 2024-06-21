@@ -19,14 +19,12 @@ import { CohereEmbeddings } from "@langchain/cohere";
 import OpenAI from "openai";
 import { OpenAIEmbeddings } from "@langchain/openai";
 
-
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
 });
 
 const sessionID = uuidv4();
 const pineconeIndex = pinecone.Index("index");
-
 
 const app = express();
 const port = 4000;
@@ -186,80 +184,76 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
     const pinecone = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
     });
-    
+
     const pineconeIndex = pinecone.Index("index");
 
-    const pineNamespace = pinecone.Index(sessionId);
-    
-   const indexStats = await pineNamespace.describeIndexStats();
+    const pineNamespace = pinecone.Namespace(sessionId);
+
+    const indexStats = await pineNamespace.describeIndexStats();
     if (indexStats.totalRecordCount > 0) {
       // Delete all vectors
       await pineNamespace.deleteAll();
     }
 
-    
-    
     const loader = new PDFLoader(filePath, { splitPages: false });
     const docs = await loader.load();
     if (!docs || docs.length === 0 || !docs[0].pageContent) {
       throw new Error("Failed to load PDF or no content found");
-      }
+    }
     const pdfText = docs[0].pageContent;
-    
+
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
       chunkOverlap: 200,
-      });
-      const chunks = await textSplitter.splitText(pdfText);
-      
-      const embeddings = new OpenAIEmbeddings({
-        model: "text-embedding-3-large",
-        apiKey: process.env.OPENAI_API_KEY,
-        });
-      
-        
-        const documents = chunks.map(
-          (chunk) =>
-            new Document({
-              id: uuidv4(),
-              pageContent: chunk,
-              metadata: { text: chunk },
-              })
-              );
-              
-              console.log("Documents to store:", documents);
-              
-              
-              await PineconeStore.fromDocuments(documents, embeddings, {
-                pineconeIndex,
-                maxConcurrency: 5,
-                namespace: sessionId,
-                });
-                
+    });
+    const chunks = await textSplitter.splitText(pdfText);
+
+    const embeddings = new OpenAIEmbeddings({
+      model: "text-embedding-3-large",
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const documents = chunks.map(
+      (chunk) =>
+        new Document({
+          id: uuidv4(),
+          pageContent: chunk,
+          metadata: { text: chunk },
+        })
+    );
+
+    console.log("Documents to store:", documents);
+
+    await PineconeStore.fromDocuments(documents, embeddings, {
+      pineconeIndex,
+      maxConcurrency: 5,
+      namespace: sessionId,
+    });
+
     fs.unlink(filePath, (err) => {
       if (err) {
         console.error("Error deleting file:", err);
-        }
-        });
-        
-        res.json({
-          sessionID: sessionID,
-          message: "PDF embedded and stored successfully",
-          });
-          } catch (error) {
-            console.error("Error embedding PDF:", error);
-            fs.unlink(filePath, (err) => {
-              if (err) {
-                console.error("Error deleting file:", err);
-                }
-                });
-                res.status(500).send("An error occurred while embedding the PDF.");
-                }
-                });
-                
-                // Endpoint to generate a response based on a stored PDF
+      }
+    });
+
+    res.json({
+      sessionID: sessionID,
+      message: "PDF embedded and stored successfully",
+    });
+  } catch (error) {
+    console.error("Error embedding PDF:", error);
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error("Error deleting file:", err);
+      }
+    });
+    res.status(500).send("An error occurred while embedding the PDF.");
+  }
+});
+
+// Endpoint to generate a response based on a stored PDF
 app.post("/generate-response", async (req, res) => {
-  const { question} = req.body;
+  const { question } = req.body;
 
   try {
     const embeddings = new OpenAIEmbeddings({
@@ -270,7 +264,7 @@ app.post("/generate-response", async (req, res) => {
     const questionEmbedding = await embeddings.embedQuery(question);
     console.log("Question Embedding:", questionEmbedding);
 
-    const queryResponse = await pineNamespace.query({
+    const queryResponse = await pineconeIndex.namespace(sessionId).query({
       topK: 10,
       vector: questionEmbedding,
       includeMetadata: true,
@@ -287,11 +281,7 @@ app.post("/generate-response", async (req, res) => {
       throw new Error("No relevant chunks retrieved from Pinecone");
     }
 
-    const inputText = `Answer in the same language you got in your PDF context, in detail. 
-    You'll get graphs and charts sometimes, try to find them in the document.
-    Sometimes you add predicted user prompts to the answer by your own,
-    don't ever do that. Just give a clean answer according to the question and the context,
-    which is retrieved from the chunks.\n\n${relevantChunks.join(
+    const inputText = `You are an AI assistant that answers based on pdf doceuments the user provides you. answer using the same language you get in the question. give a clean answer according to the question and the context which is retrieved from the chunks.\n\n${relevantChunks.join(
       "\n"
     )}\n\nQuestion: ${question}\n\nAnswer:`;
 
