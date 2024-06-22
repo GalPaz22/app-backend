@@ -155,26 +155,46 @@ app.post("/logout", async (req, res) => {
     const usersCollection = db.collection("users");
     const sessionsCollection = client.db("test").collection("sessions");
 
+    // Assuming sessionID is passed in the request body or retrieved from a cookie
+    const { sessionID } = req.body; // or req.cookies, depending on how you're passing it
+
     const user = await usersCollection.findOne({ activeSession: sessionID });
 
     if (!user) return res.status(404).send("User not found");
 
     if (user.activeSession) {
+      // Clean the Pinecone namespace
+      try {
+        const pinecone = new Pinecone();
+        const index = pinecone.Index("your-index-name");
+
+        await index.deleteAll({
+          namespace: sessionID,
+        });
+        console.log("Pinecone namespace cleaned successfully");
+      } catch (pineconeError) {
+        console.error("Error cleaning Pinecone namespace:", pineconeError);
+        // Continue with logout even if namespace cleaning fails
+      }
+
+      // Update user document
       await usersCollection.updateOne(
         { _id: user._id },
         { $unset: { activeSession: "" } }
       );
 
+      // Delete session
       await sessionsCollection.deleteOne({ sessionID: sessionID });
 
-      res.send("Logout successful");
+      res.send("Logout successful and namespace cleaned");
+    } else {
+      res.status(400).send("No active session found");
     }
   } catch (error) {
     console.error("Error during logout:", error);
     res.status(500).send("Internal Server Error");
   }
 });
-
 // New endpoint to embed and store the document
 app.post("/embed-pdf", upload.single("file"), async (req, res) => {
   const filePath = req.file.path;
@@ -360,11 +380,11 @@ app.post('/clean-namespace', async (req, res) => {
     // Assuming you're using the Pinecone JavaScript client
     const pinecone = new Pinecone();
     const index = pinecone.Index("your-index-name");
+    const namespace = index.namespace(sessionId);
+
 
     // Delete all vectors in the namespace
-    await index.deleteAll({
-      namespace: sessionId,
-    });
+    await namespace.deleteAll();
 
     res.status(200).json({ message: 'Namespace cleaned successfully' });
   } catch (error) {
