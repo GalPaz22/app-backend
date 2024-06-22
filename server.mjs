@@ -379,7 +379,7 @@ app.post('/clean-namespace', async (req, res) => {
     
     // Assuming you're using the Pinecone JavaScript client
     const pinecone = new Pinecone();
-    const index = pinecone.Index("your-index-name");
+    const index = pinecone.Index("index");
     const namespace = index.namespace(sessionId);
 
 
