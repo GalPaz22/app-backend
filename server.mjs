@@ -353,6 +353,25 @@ app.post("/chat-response", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+app.post('/clean-namespace', async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    
+    // Assuming you're using the Pinecone JavaScript client
+    const pinecone = new Pinecone();
+    const index = pinecone.Index("your-index-name");
+
+    // Delete all vectors in the namespace
+    await index.deleteAll({
+      namespace: sessionId,
+    });
+
+    res.status(200).json({ message: 'Namespace cleaned successfully' });
+  } catch (error) {
+    console.error('Error cleaning namespace:', error);
+    res.status(500).json({ error: 'An error occurred while cleaning the namespace' });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
