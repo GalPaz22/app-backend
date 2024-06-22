@@ -190,10 +190,10 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
     const pineNamespace = pineconeIndex.namespace(sessionId);
     console.log(pineNamespace);
 
-    const indexStats = await pineNamespace.describeIndexStats();
+    const indexStats = await pineconeIndex.describeIndexStats();
     if (indexStats.totalRecordCount > 0) {
       // Delete all vectors
-      await pineNamespace.deleteAll();
+      await pineconeIndex.deleteAll();
     }
 
     const loader = new PDFLoader(filePath, { splitPages: false });
