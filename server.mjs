@@ -190,7 +190,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
     const pineNamespace = pineconeIndex.namespace(sessionId);
     console.log(pineNamespace);
 
-    const indexStats = await pineconeIndex.describeIndexStats();
+    const indexStats = await pineNamespace.describeIndexStats();
     if (indexStats.totalRecordCount > 0) {
       // Delete all vectors
       await pineNamespace.deleteAll();
