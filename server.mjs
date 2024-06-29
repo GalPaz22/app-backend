@@ -156,7 +156,7 @@ app.post("/logout", async (req, res) => {
     const sessionsCollection = client.db("test").collection("sessions");
 
     // Assuming sessionID is passed in the request body or retrieved from a cookie
-    const { sessionID } = req.body; // or req.cookies, depending on how you're passing it
+    const { sessionId } = req.cookies; // or req.cookies, depending on how you're passing it
 
     const user = await usersCollection.findOne({ activeSession: sessionID });
 
@@ -169,7 +169,7 @@ app.post("/logout", async (req, res) => {
         const index = pinecone.Index("your-index-name");
 
         await index.deleteAll({
-          namespace: sessionID,
+          namespace: sessionId,
         });
         console.log("Pinecone namespace cleaned successfully");
       } catch (pineconeError) {
