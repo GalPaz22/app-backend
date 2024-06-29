@@ -269,7 +269,7 @@ app.post("/embed-pdf", upload.single("file"), async (req, res) => {
 
 // Endpoint to generate a response based on a stored PDF
 app.post("/generate-response", async (req, res) => {
-  const { question } = req.body;
+  const { question, sessionId } = req.body;
 
   try {
     const embeddings = new OpenAIEmbeddings({
