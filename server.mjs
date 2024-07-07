@@ -72,7 +72,124 @@ app.use(
     }),
   })
 );
+app.get("/check-auth", (req, res) => {
+  const authHeader = req.headers["authorization"];
+  const db = client.db("Cluster0");
+  const usersCollection = db.collection("users");
 
+  if (!authHeader) {
+    return res.status(401).json({ authenticated: false });
+  }
+
+  const userId = authHeader.split(" ")[1];
+  if (userId) {
+    return res.json({ authenticated: true });
+  } else {
+    usersCollection.updateOne(
+      { _id: user._id },
+      { $unset: { activeSession: "" } }
+    );
+    return res.status(401).json({ authenticated: false });
+  }
+});
+app.post("/login", async (req, res) => {
+    const { email, password, sessionId } = req.body;
+    if (!email || !password)
+      return res.status(400).send("Email and password are required");
+  
+    try {
+      const db = client.db("Cluster0");
+      const usersCollection = db.collection("users");
+      const sessionsCollection = client.db("test").collection("sessions");
+  
+      const user = await usersCollection.findOne({ email });
+  
+      if (!user) return res.status(404).send("User not found");
+  
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) return res.status(403).send("Invalid credentials");
+  
+      if (user.activeSession) {
+        const activeSession = await sessionsCollection.findOne({
+          sessionID: user.activeSession,
+        });
+        if (activeSession) {
+          if (activeSession.expiresAt < new Date()) {
+            await usersCollection.updateOne(
+              { _id: user._id },
+              { $unset: { activeSession: "" } }
+            );
+          } else {
+            return res.status(400).send("User is already logged in");
+          }
+        }
+      }
+  
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      await usersCollection.updateOne(
+        { _id: user._id },
+        { $set: { activeSession: sessionId } }
+      );
+  
+      await sessionsCollection.insertOne({
+        sessionID,
+        userID: user._id,
+        expiresAt,
+      });
+  
+      res.send("Login successful");
+    } catch (error) {
+      console.error("Error during login:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+  
+  app.post("/logout", async (req, res) => {
+    try {
+      const db = client.db("Cluster0");
+      const usersCollection = db.collection("users");
+      const sessionsCollection = client.db("test").collection("sessions");
+  
+      // Assuming sessionID is passed in the request body or retrieved from a cookie
+      const { sessionId } = req.cookies; // or req.cookies, depending on how you're passing it
+  
+      const user = await usersCollection.findOne({ activeSession: sessionID });
+  
+      if (!user) return res.status(404).send("User not found");
+  
+      if (user.activeSession) {
+        // Clean the Pinecone namespace
+        try {
+          const pinecone = new Pinecone();
+          const index = pinecone.Index("your-index-name");
+  
+          await index.deleteAll({
+            namespace: sessionId,
+          });
+          console.log("Pinecone namespace cleaned successfully");
+        } catch (pineconeError) {
+          console.error("Error cleaning Pinecone namespace:", pineconeError);
+          // Continue with logout even if namespace cleaning fails
+        }
+  
+        // Update user document
+        await usersCollection.updateOne(
+          { _id: user._id },
+          { $unset: { activeSession: "" } }
+        );
+  
+        // Delete session
+        await sessionsCollection.deleteOne({ sessionID: sessionID });
+  
+        res.send("Logout successful and namespace cleaned");
+      } else {
+        res.status(400).send("No active session found");
+      }
+    } catch (error) {
+      console.error("Error during logout:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  });
 const upload = multer({ dest: "uploads/" });
 const sessionMemory = {};
 
